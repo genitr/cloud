@@ -9,7 +9,8 @@ from .serializers import (
     UserDetailSerializer, 
     UserUpdateSerializer,
     RegistrationSerializer,
-    UserStorageSerializer
+    UserStorageSerializer,
+    LoginSerializer
 )
 from .permissions import IsAdminUser
 
@@ -114,6 +115,35 @@ class UserViewSet(viewsets.ModelViewSet):
             # Возвращаем обновленные данные
             detail_serializer = UserDetailSerializer(user)
             return Response(detail_serializer.data)
+    
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def login(self, request):
+        """
+        Вход в систему и получение токена.
+        
+        POST /api/users/login/
+        {
+            "username": "john",
+            "password": "secret123"
+        }
+        """
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = serializer.validated_data['user']
+        
+        # Удаляем старый токен и создаем новый
+        Token.objects.filter(user=user).delete()
+        token = Token.objects.create(user=user)
+        
+        return Response({
+            'success': True,
+            'message': 'Вход выполнен успешно',
+            'data': {
+                'user': UserDetailSerializer(user, context={'request': request}).data,
+                'token': token.key
+            }
+        }, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'])
     def logout(self, request):

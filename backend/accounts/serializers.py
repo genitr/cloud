@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
 
 
 User = get_user_model()
@@ -148,6 +149,29 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
+    
+    def validate(self, data):
+        username = data.get('username')
+        password = data.get('password')
+        
+        if username and password:
+            user = authenticate(username=username, password=password)
+            
+            if user:
+                if not user.is_active:
+                    raise serializers.ValidationError('Пользователь заблокирован')
+                data['user'] = user
+            else:
+                raise serializers.ValidationError('Неверный логин или пароль')
+        else:
+            raise serializers.ValidationError('Необходимо указать username и password')
+        
+        return data
+    
 
 class RegistrationSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации"""
