@@ -1,0 +1,106 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  border-radius: 12px;
+  transition: all 150ms ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  background: rgb(151, 151, 151);
+  color: white;
+}
+
+.button:hover:not(:disabled) {
+  background: rgb(180, 174, 174);
+  transform: translateY(-1px);
+  box-shadow: rgb(74, 74, 74);
+}
+
+.button:focus-visible {
+  outline: 2px solid rgb(255, 255, 255);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Размеры */
+.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.medium {
+  padding: 0.625rem 1.25rem;
+  font-size: 1rem;
+}
+
+.large {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.125rem;
+}
+
+/* Варианты */
+.primary {
+  background: rgb(151, 151, 151);
+  color: white;
+}
+
+.primary:hover:not(:disabled) {
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-hover),
+    #db2777
+  );
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.secondary {
+  background: rgb(151, 151, 151);
+  color: white;
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  transform: translateY(-1px);
+}
+
+.outline {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.outline:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+/* Иконка */
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.iconLeft {
+  margin-right: 0.375rem;
+}
+
+.iconRight {
+  margin-left: 0.375rem;
+}

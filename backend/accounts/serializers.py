@@ -194,7 +194,9 @@ class RegistrationSerializer(serializers.ModelSerializer):
         read_only_fields = ['token']
         extra_kwargs = {
             'password': {'write_only': True},
-            'email': {'required': True}
+            'email': {'required': True},
+            'first_name': {'required': False},
+            'last_name': {'required': False},
         }
     
     def validate_username(self, value):

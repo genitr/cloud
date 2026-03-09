@@ -1,0 +1,94 @@
+/* Базовые стили для ВСЕХ иконок */
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0; /* Не сжимается во flex-контейнерах */
+  
+  /* Плавные переходы */
+  transition: color 0.2s ease, transform 0.2s ease;
+  
+  /* Наследование цвета текста */
+  color: inherit;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+/* Размеры */
+.small {
+  width: 16px;
+  height: 16px;
+}
+
+.medium {
+  width: 24px;
+  height: 24px;
+}
+
+.large {
+  width: 32px;
+  height: 32px;
+}
+
+.xlarge {
+  width: 48px;
+  height: 48px;
+}
+
+/* Цветовые варианты */
+.primary {
+  color: var(--color-primary, #3b82f6);
+}
+
+.secondary {
+  color: var(--color-secondary, #6b7280);
+}
+
+.success {
+  color: var(--color-success, #10b981);
+}
+
+.error {
+  color: var(--color-error, #ef4444);
+}
+
+.warning {
+  color: var(--color-warning, #f59e0b);
+}
+
+/* Состояния */
+.hoverable:hover {
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Анимации */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
