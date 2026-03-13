@@ -1,20 +1,29 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { register, clearError } from '../../store/slices/authSlice';
 import Form from '../ui/Form/Form';
 import { 
   validateLogin, validatePassword, validateConfirmPassword,
   validateEmail, validateFirstName, validateLastName
 } from '../../utils/validation';
-import authService from '../../services/authService';
 import type { 
   RegistrationData, 
-  AuthResponse, 
-  NavigationState, 
   FormFieldValue, 
   FormData as FormDataType 
 } from '../../types';
 
 const RegistrationForm: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isLoading, error } = useAppSelector((state) => state.auth);
+
+  // Очищаем ошибку при размонтировании
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const fields = [
     { name: 'login', type: 'text' as const, label: 'Логин', placeholder: 'Введите логин' },
@@ -74,33 +83,26 @@ const RegistrationForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (formData: FormDataType): Promise<AuthResponse | void> => {
-    try {
-      // Приводим FormData к RegistrationData
-      const registrationData: RegistrationData = {
-        login: String(formData.login || ''),
-        email: String(formData.email || ''),
-        password: String(formData.password || ''),
-        confirmPassword: String(formData.confirmPassword || ''),
-        firstName: formData.firstName ? String(formData.firstName) : '',
-        lastName: formData.lastName ? String(formData.lastName) : ''
-      };
+  const handleSubmit = async (formData: FormDataType) => {
+    const registrationData: RegistrationData = {
+      login: String(formData.login || ''),
+      email: String(formData.email || ''),
+      password: String(formData.password || ''),
+      confirmPassword: String(formData.confirmPassword || ''),
+      firstName: formData.firstName ? String(formData.firstName) : '',
+      lastName: formData.lastName ? String(formData.lastName) : ''
+    };
 
-      const result = await authService.register(registrationData);
-      console.log('Registration successful:', result);
-      
-      const navigationState: NavigationState = { 
+    const result = await dispatch(register(registrationData));
+    
+    // Успешная регистрация
+    if (register.fulfilled.match(result)) {
+      navigate('/login', { 
         state: { message: 'Регистрация успешна! Теперь войдите в систему.' }
-      };
-      
-      navigate('/login', navigationState);
-      
-      return result;
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'message' in error) {
-        throw new Error(String(error.message));
-      }
-      throw new Error('Ошибка при регистрации');
+      });
+      return { success: true };
+    } else {
+      throw new Error(error || 'Ошибка при регистрации');
     }
   };
 
@@ -114,12 +116,13 @@ const RegistrationForm: React.FC = () => {
       initialData={initialData}
       validationRules={validationRules}
       onSubmit={handleSubmit}
-      submitButtonText="Зарегистрироваться"
+      submitButtonText={isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
       title="Регистрация"
       columns={2}
       showAlternateAction={true}
       alternateActionText="Уже есть аккаунт? Войти"
       onAlternateAction={handleLoginClick}
+      serverError={error}
     />
   );
 };

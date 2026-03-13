@@ -21,7 +21,8 @@ const Form = ({
   columns = 1,
   alternateActionText,
   onAlternateAction,
-  showAlternateAction = false
+  showAlternateAction = false,
+  serverError
 }: FormProps) => {
   
   const [formData, setFormData] = useState<FormData>(initialData);
@@ -134,6 +135,12 @@ const Form = ({
   return (
     <div className={styles.formWrapper}>
       {title && <h2 className={styles.title}>{title}</h2>}
+
+      {serverError && (
+        <div className={styles.error}>
+          {serverError}
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className={styles.form} noValidate>
         

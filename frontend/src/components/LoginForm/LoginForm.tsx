@@ -1,11 +1,29 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { login, clearError } from '../../store/slices/authSlice';
 import Form from '../ui/Form/Form';
 import { validateLogin, validatePassword } from '../../utils/validation';
-import authService from '../../services/authService';
-import type { LoginData, AuthResponse, FormFieldValue, FormData as FormDataType } from '../../types';
+import type { LoginData, FormFieldValue, FormData as FormDataType } from '../../types';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  // Если пользователь уже авторизован, редиректим на главную
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/main');
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Очищаем ошибку при размонтировании
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const fields = [
     { name: 'login', type: 'text' as const, label: 'Логин', placeholder: 'Введите логин' },
@@ -32,23 +50,19 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (formData: FormDataType): Promise<AuthResponse | void> => {
-    try {
+  const handleSubmit = async (formData: FormDataType) => {
+    const loginData: LoginData = {
+      login: String(formData.login || ''),
+      password: String(formData.password || '')
+    };
 
-      const loginData: LoginData = {
-        login: String(formData.login || ''),
-        password: String(formData.password || '')
-      };
-
-      const result = await authService.login(loginData);
-
-      navigate('/main');
-      return result;
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'message' in error) {
-        throw new Error(String(error.message));
-      }
-      throw new Error('Ошибка при входе');
+    const result = await dispatch(login(loginData));
+    
+    // Успешный вход - редирект произойдет в useEffect
+    if (login.fulfilled.match(result)) {
+      return { success: true };
+    } else {
+      throw new Error(error || 'Ошибка при входе');
     }
   };
 
@@ -62,12 +76,13 @@ const LoginForm: React.FC = () => {
       initialData={initialData}
       validationRules={validationRules}
       onSubmit={handleSubmit}
-      submitButtonText="Войти"
+      submitButtonText={isLoading ? 'Вход...' : 'Войти'}
       title="Вход в систему"
       columns={1}
       showAlternateAction={true}
       alternateActionText="Нет аккаунта? Зарегистрироваться"
       onAlternateAction={handleRegisterClick}
+      serverError={error}
     />
   );
 };

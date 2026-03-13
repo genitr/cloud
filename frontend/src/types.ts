@@ -75,7 +75,6 @@ export interface ValidationRules {
   [key: string]: ValidationRule;
 }
 
-// Исправляем FormData - добавляем индексную сигнатуру
 export interface FormData {
   [key: string]: FormFieldValue;
 }
@@ -105,6 +104,7 @@ export interface FormProps {
   alternateActionText?: string;
   onAlternateAction?: () => void;
   showAlternateAction?: boolean;
+  serverError?: string | null;
 }
 
 // Интерфейс для пропсов Input
@@ -126,6 +126,19 @@ export interface LoginData extends FormData {
   password: string;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface LoginData extends FormData {
+  login: string;
+  password: string;
+}
+
 export interface RegistrationData extends FormData {
   login: string;
   email: string;
@@ -136,15 +149,12 @@ export interface RegistrationData extends FormData {
 }
 
 export interface AuthResponse {
-  user?: {
-    id: string;
-    login: string;
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-  };
+  user?: User;
   token?: string;
   message?: string;
+  data?: {
+    token?: string;
+  };
   [key: string]: unknown;
 }
 
