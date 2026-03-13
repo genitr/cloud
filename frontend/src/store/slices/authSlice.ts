@@ -1,17 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { PayloadAction } from '@reduxjs/toolkit';
-import type { LoginData, RegistrationData, User } from '../../types';
-
-const API_URL = 'http://localhost:8000/api';
-
-// Типы для состояния
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
-}
+import type { 
+  LoginData, 
+  RegistrationData,
+  LoginResponse,
+  RegisterResponse,
+  AuthState, 
+  UserDetail,
+  RootState
+} from '../../types';
+import { API_URL } from '../../types';
 
 const initialState: AuthState = {
   user: null,
@@ -21,9 +18,13 @@ const initialState: AuthState = {
   isAuthenticated: !!localStorage.getItem('auth_token'),
 };
 
-export const register = createAsyncThunk(
+export const register = createAsyncThunk<
+  RegisterResponse,
+  RegistrationData,
+  { rejectValue: string }
+>(
   'auth/register',
-  async (userData: RegistrationData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue }) => {
     try {
       const response = await fetch(`${API_URL}/users/`, {
         method: 'POST',
@@ -43,14 +44,7 @@ export const register = createAsyncThunk(
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.error) {
-          return rejectWithValue(data.error);
-        }
-        if (data.errors) {
-          const errorMessages = Object.values(data.errors).flat();
-          return rejectWithValue(errorMessages.join(', '));
-        }
-        return rejectWithValue('Ошибка регистрации');
+        return rejectWithValue(data.error || 'Ошибка регистрации');
       }
 
       return data;
@@ -60,9 +54,13 @@ export const register = createAsyncThunk(
   }
 );
 
-export const login = createAsyncThunk(
+export const login = createAsyncThunk<
+  LoginResponse,
+  LoginData,
+  { rejectValue: string }
+>(
   'auth/login',
-  async (credentials: LoginData, { rejectWithValue }) => {
+  async (credentials, { rejectWithValue }) => {
     try {
       const response = await fetch(`${API_URL}/users/login/`, {
         method: 'POST',
@@ -88,7 +86,42 @@ export const login = createAsyncThunk(
   }
 );
 
-export const logout = createAsyncThunk(
+// Получить текущего пользователя
+export const fetchCurrentUser = createAsyncThunk<
+  UserDetail,
+  void,
+  { state: RootState; rejectValue: string }
+>(
+  'auth/fetchCurrentUser',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const token = state.auth.token;
+
+      const response = await fetch(`${API_URL}/users/me/`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки профиля');
+      }
+
+      const data: UserDetail = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue('Ошибка при загрузке профиля: ' + error);
+    }
+  }
+);
+
+export const logout = createAsyncThunk<
+  void,
+  void,
+  { rejectValue: string }
+>(
   'auth/logout',
   async (_, { getState, rejectWithValue }) => {
     try {
@@ -120,11 +153,6 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    setToken: (state, action: PayloadAction<string>) => {
-      state.token = action.payload;
-      state.isAuthenticated = true;
-      localStorage.setItem('auth_token', action.payload);
-    },
     logoutLocal: (state) => {
       state.user = null;
       state.token = null;
@@ -145,7 +173,7 @@ const authSlice = createSlice({
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || 'Ошибка регистрации';
       })
       
       // Login
@@ -155,16 +183,27 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token || action.payload.data?.token;
+        state.user = action.payload.data.user;
+        state.token = action.payload.data.token;
         state.isAuthenticated = true;
-        if (state.token) {
-          localStorage.setItem('auth_token', state.token);
-        }
+        localStorage.setItem('auth_token', action.payload.data.token);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || 'Ошибка входа';
+      })
+      
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+      })
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || 'Ошибка загрузки профиля';
       })
       
       // Logout
@@ -180,7 +219,7 @@ const authSlice = createSlice({
       })
       .addCase(logout.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload || 'Ошибка при выходе';
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
@@ -189,5 +228,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, setToken, logoutLocal } = authSlice.actions;
+export const { clearError, logoutLocal } = authSlice.actions;
 export default authSlice.reducer;
