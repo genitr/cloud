@@ -120,12 +120,12 @@ export const fetchCurrentUser = createAsyncThunk<
 export const logout = createAsyncThunk<
   void,
   void,
-  { rejectValue: string }
+  { state: RootState; rejectValue: string }
 >(
   'auth/logout',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { getState }) => {
     try {
-      const state = getState() as { auth: AuthState };
+      const state = getState();
       const token = state.auth.token;
 
       if (token) {
@@ -137,11 +137,11 @@ export const logout = createAsyncThunk<
         });
 
         if (!response.ok) {
-          return rejectWithValue('Ошибка при выходе из системы');
+          console.warn('Ошибка при выходе на сервере');
         }
       }
     } catch (error) {
-      return rejectWithValue('Ошибка сети при выходе из системы: ' + error);
+      console.error('Ошибка сети при выходе из системы:', error);
     }
   }
 );
@@ -217,12 +217,11 @@ const authSlice = createSlice({
         state.isLoading = false;
         localStorage.removeItem('auth_token');
       })
-      .addCase(logout.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload || 'Ошибка при выходе';
+      .addCase(logout.rejected, (state) => {
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        state.isLoading = false;
         localStorage.removeItem('auth_token');
       });
   },

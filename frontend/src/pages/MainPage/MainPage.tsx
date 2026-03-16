@@ -1,107 +1,305 @@
-// MainPage.tsx (обновленная версия)
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { fetchFolders } from '../../store/slices/foldersSlice';
-import { fetchFiles } from '../../store/slices/filesSlice';
-import { fetchCurrentUser } from '../../store/slices/authSlice';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+
 import S from './MainPage.module.css';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { fetchFolders, createFolder, deleteFolder } from '../../store/slices/foldersSlice';
+import { fetchFiles, uploadFile, deleteFile, downloadFile } from '../../store/slices/filesSlice';
+import { fetchCurrentUser } from '../../store/slices/authSlice';
+import { createShare } from '../../store/slices/sharingSlice';
+import StorageFileList from '../../components/StorageFileList/StorageFileList';
+import Toolbar from '../../components/Toolbar/Toolbar';
+import UploadFileModal from '../../components/Modals/UploadFileModal';
+import CreateFolderModal from '../../components/Modals/CreateFolderModal';
+import DeleteConfirmModal from '../../components/Modals/DeleteConfirmModal';
+import ShareModal from '../../components/Modals/ShareModal';
+import Breadcrumbs from '../../components/Breadcrumbs/Breadcrumbs';
+import type { Folder, FileListItem, ShareData, UploadFileData } from '../../types';
+import { Link } from 'react-router-dom';
 
 const MainPage = () => {
   const dispatch = useAppDispatch();
   
+  // Состояния для модальных окон
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  
+  // Состояния для выбранных элементов
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FileListItem | null>(null);
+  const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+
   const { folders, isLoading: foldersLoading, error: foldersError } = useAppSelector(state => state.folders);
   const { files, isLoading: filesLoading, error: filesError } = useAppSelector(state => state.files);
-  const { user, isLoading: authLoading } = useAppSelector(state => state.auth);
+  const { user, isLoading: authLoading, isAuthenticated } = useAppSelector(state => state.auth);
 
+  // Построение пути для хлебных крошек
+  const breadcrumbsPath = useMemo(() => {
+    if (!currentFolderId) return ['Корень'];
+    
+    const path: string[] = [];
+    let currentId: number | null = currentFolderId;
+    
+    while (currentId) {
+      const folder = folders.find(f => f.id === currentId);
+      if (!folder) break;
+      
+      path.unshift(folder.name);
+      currentId = folder.parent_folder;
+    }
+    
+    return ['Корень', ...path];
+  }, [folders, currentFolderId]);
+
+  // Обработчик клика по хлебной крошке
+  const handleBreadcrumbClick = useCallback((index: number) => {
+    if (index === 0) {
+      // Клик на "Корень"
+      setCurrentFolderId(null);
+      return;
+    }
+    
+    // Находим папку по имени на нужном уровне
+    const targetFolderName = breadcrumbsPath[index];
+    const targetFolder = folders.find(f => f.name === targetFolderName);
+    
+    if (targetFolder) {
+      setCurrentFolderId(targetFolder.id);
+    }
+  }, [breadcrumbsPath, folders]);
+
+  // Загрузка данных только если пользователь авторизован
   useEffect(() => {
+    if (!isAuthenticated) {
+      // Если не авторизован, не загружаем данные
+      return;
+    }
+
     if (!user) {
       dispatch(fetchCurrentUser());
     }
     
     dispatch(fetchFolders());
     dispatch(fetchFiles({}));
-  }, [dispatch, user]);
+  }, [dispatch, user, isAuthenticated]);
+
+  // Фильтруем файлы по текущей папке
+  const filteredFiles = useMemo(() => {
+    if (!files.length) return [];
+    
+    return files.filter(file => {
+      if (currentFolderId === null) {
+        return !file.folder_name || file.folder_name === 'Корень';
+      } else {
+        const currentFolder = folders.find(f => f.id === currentFolderId);
+        return currentFolder && file.folder_name === currentFolder.name;
+      }
+    });
+  }, [files, folders, currentFolderId]);
+
+  useEffect(() => {
+    // При смене папки загружаем файлы для этой папки
+    dispatch(fetchFiles({ folder: currentFolderId }));
+  }, [dispatch, currentFolderId]);
+
+  // Обработчики для папок
+  const handleFolderClick = (folder: Folder) => {
+    setCurrentFolderId(folder.id);
+  };
+
+  const handleFolderDelete = (folder: Folder) => {
+    setSelectedFolder(folder);
+    setDeleteModalOpen(true);
+  };
+
+  const handleCreateFolder = async (folderName: string) => {
+    try {
+      await dispatch(createFolder({ 
+        name: folderName, 
+        parent_folder: currentFolderId 
+      })).unwrap();
+      // Обновляем список папок
+      dispatch(fetchFolders());
+    } catch (error) {
+      console.error('Ошибка при создании папки:', error);
+    }
+  };
+
+  // Обработчики для файлов
+  const handleFileClick = (file: FileListItem) => {
+    console.log('Файл открыт:', file);
+  };
+
+  const handleFileDelete = (file: FileListItem) => {
+    setSelectedFile(file);
+    setDeleteModalOpen(true);
+  };
+
+  const handleFileShare = (file: FileListItem) => {
+    setSelectedFile(file);
+    setShareModalOpen(true);
+  };
+
+  const handleFileDownload = async (file: FileListItem) => {
+    try {
+      await dispatch(downloadFile(file.id)).unwrap();
+    } catch (error) {
+      console.error('Ошибка при скачивании файла:', error);
+    }
+  };
+
+  const handleFileUpload = async (filesData: UploadFileData[] | null) => {
+    if (!filesData || filesData.length === 0) return;
+    
+    try {
+      for (let i = 0; i < filesData.length; i++) {
+        const { file, name, comment } = filesData[i];
+        console.log(`Загрузка файла ${i + 1}/${filesData.length} в папку:`, currentFolderId);
+        
+        const result = await dispatch(uploadFile({
+          file,
+          name: name || undefined,
+          comment: comment || undefined,
+          folder: currentFolderId 
+        })).unwrap();
+        
+        console.log(`Файл успешно загружен в папку ${currentFolderId}:`, result);
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке файлов:', error);
+    }
+  };
+
+  // Обработчики для модальных окон
+  const handleConfirmDelete = async () => {
+    try {
+      if (selectedFolder) {
+        await dispatch(deleteFolder(selectedFolder.id)).unwrap();
+        setSelectedFolder(null);
+      } else if (selectedFile) {
+        await dispatch(deleteFile(selectedFile.id)).unwrap();
+        setSelectedFile(null);
+      }
+      setDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Ошибка при удалении:', error);
+    }
+  };
+
+  const handleShare = async (shareData: ShareData) => {
+    if (!selectedFile) return;
+    
+    try {
+      await dispatch(createShare(selectedFile.id)).unwrap();
+      console.log('Файл расшарен:', shareData);
+    } catch (error) {
+      console.error('Ошибка при расшаривании:', error);
+    }
+  };
+
+  // Навигация назад (в родительскую папку)
+  const handleNavigateUp = () => {
+    if (currentFolderId) {
+      const currentFolder = folders.find(f => f.id === currentFolderId);
+      if (currentFolder?.parent_folder) {
+        setCurrentFolderId(currentFolder.parent_folder);
+      } else {
+        setCurrentFolderId(null);
+      }
+    }
+  };
 
   if (authLoading) {
     return <div className={S.container}>Загрузка профиля...</div>;
   }
 
+  // Если не авторизован, показываем сообщение
+  if (!isAuthenticated) {
+    return (
+      <div className={S.container}>
+        <h1>Файловое хранилище</h1>
+        <p>Пожалуйста, <Link to="/login">войдите</Link> или <Link to="/registration">зарегистрируйтесь</Link></p>
+      </div>
+    );
+  }
+
   return (
     <div className={S.container}>
-      <h1>Файловое хранилище</h1>
-      
-      {user ? (
-        <div style={{ marginBottom: '20px', padding: '10px', background: '#f0f0f0', borderRadius: '4px' }}>
-          <div><strong>Пользователь:</strong> {user.username}</div>
-          <div><strong>Email:</strong> {user.email}</div>
-          <div><strong>Имя:</strong> {user.first_name || 'не указано'} {user.last_name || ''}</div>
-        </div>
-      ) : (
-        <div style={{ marginBottom: '20px', padding: '10px', background: '#fff3cd', borderRadius: '4px' }}>
-          Данные пользователя не загружены
-        </div>
-      )}
-      
-      {/* Папки */}
-      <div style={{ marginBottom: '30px' }}>
-        <h2>Папки ({folders.length})</h2>
-        
-        {foldersLoading && <div>Загрузка папок...</div>}
-        {foldersError && <div style={{ color: 'red' }}>Ошибка: {foldersError}</div>}
-        
-        {!foldersLoading && !foldersError && folders.length === 0 && (
-          <div>Нет доступных папок</div>
-        )}
-        
-        {!foldersLoading && !foldersError && folders.length > 0 && (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {folders.map(folder => (
-              <li key={folder.id} style={{ 
-                padding: '10px', 
-                margin: '5px 0', 
-                background: '#e6f3ff',
-                borderRadius: '4px'
-              }}>
-                <strong>{folder.name}</strong>
-                <div style={{ fontSize: '0.9em', color: '#666' }}>
-                  Путь: {folder.full_path}
-                </div>
-              </li>
-            ))}
-          </ul>
+      <div className={S.header}>
+        <h1>Файловое хранилище</h1>
+        {user && (
+          <div className={S.userInfo}>
+            <span className={S.userName}>{user.username}</span>
+            <span className={S.userEmail}>{user.email}</span>
+          </div>
         )}
       </div>
-      
-      {/* Файлы */}
-      <div>
-        <h2>Файлы ({files.length})</h2>
-        
-        {filesLoading && <div>Загрузка файлов...</div>}
-        {filesError && <div style={{ color: 'red' }}>Ошибка: {filesError}</div>}
-        
-        {!filesLoading && !filesError && files.length === 0 && (
-          <div>Нет доступных файлов</div>
-        )}
-        
-        {!filesLoading && !filesError && files.length > 0 && (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {files.map(file => (
-              <li key={file.id} style={{ 
-                padding: '10px', 
-                margin: '5px 0', 
-                background: '#f5f5f5',
-                borderRadius: '4px'
-              }}>
-                <strong>{file.name}</strong>
-                <div style={{ fontSize: '0.9em', color: '#666' }}>
-                  Размер: {file.size_formatted} | 
-                  Тип: {file.content_type}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+
+      {/* Хлебные крошки */}
+      <Breadcrumbs 
+        path={breadcrumbsPath} 
+        onCrumbClick={handleBreadcrumbClick}
+      />
+
+      {/* Панель инструментов */}
+      <Toolbar 
+        onUpload={() => setUploadModalOpen(true)}
+        onCreateFolder={() => setCreateFolderModalOpen(true)}
+        onNavigateUp={handleNavigateUp}
+        showNavigateUp={!!currentFolderId}
+      />
+
+      {/* Список файлов и папок */}
+      <StorageFileList
+        folders={folders.filter(f => f.parent_folder === currentFolderId)}
+        foldersIsLoading={foldersLoading}
+        foldersError={foldersError}
+        onFolderDelete={handleFolderDelete}
+        onFolderClick={handleFolderClick}
+        files={filteredFiles}
+        filesIsLoading={filesLoading}
+        filesError={filesError}
+        onFileDelete={handleFileDelete}
+        onFileShare={handleFileShare}
+        onFileDownload={handleFileDownload}
+        onFileClick={handleFileClick}
+        currentFolderId={currentFolderId}
+      />
+
+      {/* Модальные окна */}
+      <UploadFileModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUpload={handleFileUpload}
+      />
+
+      <CreateFolderModal
+        isOpen={createFolderModalOpen}
+        onClose={() => setCreateFolderModalOpen(false)}
+        onCreate={handleCreateFolder}
+      />
+
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setSelectedFolder(null);
+          setSelectedFile(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        itemName={selectedFolder?.name || selectedFile?.name}
+      />
+
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => {
+          setShareModalOpen(false);
+          setSelectedFile(null);
+        }}
+        onShare={handleShare}
+        itemName={selectedFile?.name}
+      />
     </div>
   );
 };

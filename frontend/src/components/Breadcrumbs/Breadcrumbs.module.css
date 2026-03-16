@@ -1,0 +1,23 @@
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.crumb {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.crumb:hover {
+  text-decoration: underline;
+}
+
+.separator {
+  color: #999;
+}

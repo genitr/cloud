@@ -2,11 +2,11 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { 
   FileItem,
-  FileListItem, 
-  FileUploadData, 
+  FileListItem,
   FileFilterParams,
   FilesState,
-  RootState
+  RootState,
+  UploadFileData
 } from '../../types';
 import { API_URL } from '../../types';
 
@@ -102,7 +102,7 @@ export const fetchFileDetails = createAsyncThunk<
 // Загрузить файл
 export const uploadFile = createAsyncThunk<
   FileItem,
-  FileUploadData,
+  UploadFileData & { folder?: number | null },
   { state: RootState; rejectValue: string }
 >(
   'files/upload',
@@ -113,11 +113,21 @@ export const uploadFile = createAsyncThunk<
 
       const formData = new FormData();
       formData.append('file', fileData.file);
-      if (fileData.name) formData.append('name', fileData.name);
+      
+      if (fileData.name) {
+        const extension = fileData.file.name.substring(fileData.file.name.lastIndexOf('.'));
+        formData.append('name', fileData.name + extension);
+      }
+      
       if (fileData.folder !== undefined && fileData.folder !== null) {
         formData.append('folder', String(fileData.folder));
       }
-      if (fileData.comment) formData.append('comment', fileData.comment);
+      
+      if (fileData.comment) {
+        formData.append('comment', fileData.comment);
+      }
+
+      console.log('Uploading file to folder:', fileData.folder);
 
       const response = await fetch(`${API_URL}/files/`, {
         method: 'POST',
@@ -126,18 +136,20 @@ export const uploadFile = createAsyncThunk<
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        return rejectWithValue(error.error || 'Ошибка загрузки файла');
+        const errorData = await response.json().catch(() => ({}));
+        return rejectWithValue(errorData.error || `Ошибка загрузки файла: ${response.status}`);
       }
 
       const data: FileItem = await response.json();
+      console.log('Upload successful to folder:', data.folder);
       
-      // Обновляем список файлов в текущей папке
+      // Обновляем список файлов ТОЛЬКО для текущей папки
       await dispatch(fetchFiles({ folder: fileData.folder || null }));
       
       return data;
     } catch (error) {
-      return rejectWithValue('Ошибка при загрузке файла: ' + error);
+      console.error('Upload exception:', error);
+      return rejectWithValue('Ошибка при загрузке файла');
     }
   }
 );

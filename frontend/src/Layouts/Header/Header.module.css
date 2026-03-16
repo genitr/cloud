@@ -95,3 +95,235 @@
     display: none;
   }
 }
+
+.profileItem {
+  margin-left: auto;
+}
+
+.profileContainer {
+  position: relative;
+}
+
+.profileButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profileButton:hover {
+  background: #f5f5f5;
+  border-color: #007bff;
+}
+
+.profileAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.profileName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.chevron {
+  transition: transform 0.2s;
+}
+
+.rotated {
+  transform: rotate(180deg);
+}
+
+.profileDropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 280px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+
+.dropdownHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.dropdownAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.dropdownInfo {
+  flex: 1;
+}
+
+.dropdownName {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.dropdownEmail {
+  font-size: 12px;
+  color: #666;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 8px 0;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #333;
+  text-decoration: none;
+  transition: background 0.2s;
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdownItem:hover {
+  background: #f5f5f5;
+}
+
+/* Мобильные стили */
+.mobileMenu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .nav {
+    display: none;
+  }
+
+  .mobileMenu {
+    display: block;
+  }
+
+  .mobileProfile {
+    position: relative;
+  }
+
+  .mobileProfileButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .mobileAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    text-transform: uppercase;
+  }
+
+  .mobileDropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 280px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+  }
+
+  .mobileDropdownHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .mobileDropdownAvatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .mobileDropdownInfo {
+    flex: 1;
+  }
+
+  .mobileDropdownName {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .mobileDropdownEmail {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .mobileDropdownDivider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 8px 0;
+  }
+
+  .mobileSelect {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: white;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+  }
+
+  .mobileSelect option {
+    padding: 8px;
+  }
+}

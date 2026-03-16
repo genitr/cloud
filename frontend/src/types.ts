@@ -432,3 +432,50 @@ export interface RootState {
   sharing: SharingState;
   users: UsersState;
 }
+
+// ==================== МОДАЛЬНЫЕ ОКНА ====================
+
+export interface BaseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export interface CreateFolderModalProps extends BaseModalProps {
+  onCreate: (folderName: string) => void;
+}
+
+export interface DeleteConfirmModalProps extends BaseModalProps {
+  onConfirm: () => void;
+  itemName: string | undefined;
+}
+
+export type Permission = 'view' | 'edit' | 'comment';
+
+export interface ShareData {
+  email: string;
+  permission: Permission;
+}
+
+export interface ShareModalProps extends BaseModalProps {
+  onShare: (shareData: ShareData) => void;
+  itemName: string | undefined;
+}
+
+export interface UploadFileData {
+  file: File;
+  name?: string;
+  comment?: string;
+}
+
+export interface UploadFileModalProps extends BaseModalProps {
+  onUpload: (files: UploadFileData[] | null) => void;
+}
+
+export type ModalType = 'upload' | 'createFolder' | 'delete' | 'share';
+
+export interface ModalsState {
+  upload: boolean;
+  createFolder: boolean;
+  delete: boolean;
+  share: boolean;
+}
