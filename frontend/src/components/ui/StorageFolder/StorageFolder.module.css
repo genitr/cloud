@@ -3,12 +3,18 @@
   grid-template-columns: auto 3fr 1fr 1fr 1fr;
   align-items: center;
   padding: 10px 15px;
+  color: #5b5c5d;
   border-bottom: 1px solid #eee;
   transition: background 0.2s;
 }
 
 .item:hover {
-  background: #f8f9fa;
+  background: #5b5c5d;
+  color: #e9ecef;
+}
+
+.item:hover .itemMeta {
+  color: #e9ecef;
 }
 
 .itemIcon {

@@ -17,7 +17,7 @@ interface StorageFileListProps {
     onFileShare: (file: FileListItem) => void;
     onFileDownload: (file: FileListItem) => void;
     onFileClick: (folder: FileListItem) => void;
-    currentFolderId?: number | null;  // Добавляем пропс
+    currentFolderId?: number | null;
 }
 
 const StorageFileList: React.FC<StorageFileListProps> = ({
@@ -33,13 +33,10 @@ const StorageFileList: React.FC<StorageFileListProps> = ({
     onFileShare,
     onFileDownload,
     onFileClick,
-    currentFolderId,  // Добавляем
+    currentFolderId,
 }) => {
     // Фильтруем папки по текущей папке
     const filteredFolders = folders.filter(f => f.parent_folder === currentFolderId);
-    
-    // Файлы уже должны быть отфильтрованы на бэкенде, но на всякий случай
-    // можно добавить фильтрацию и здесь, если нужно
 
     return (
         <div className={S.fileList}>
@@ -52,31 +49,35 @@ const StorageFileList: React.FC<StorageFileListProps> = ({
 
             {foldersIsLoading && <div>Загрузка папок...</div>}
             {foldersError && <div style={{ color: 'red' }}>Ошибка: {foldersError}</div>}
-            
+
             {!foldersIsLoading && !foldersError && (
                 <>
-                    {filteredFolders.length === 0 ? (
-                        <div>Нет папок в текущей директории</div>
-                    ) : (
-                        filteredFolders.map(folder => (
-                            <StorageFolder
-                                key={folder.id}
-                                folder={folder}
-                                onDelete={onFolderDelete}
-                                onClick={() => onFolderClick(folder)}
-                            />
-                        ))
-                    )}
+                    {filteredFolders.map(folder => (
+                        <StorageFolder
+                            key={folder.id}
+                            folder={folder}
+                            onDelete={onFolderDelete}
+                            onClick={() => onFolderClick(folder)}
+                        />
+                    ))}
                 </>
             )}
 
-            {filesIsLoading && <div>Загрузка файлов...</div>}
+            {filesIsLoading && <div style={{
+                                    textAlign: 'center',
+                                    color: '#a9a8a8',
+                                    padding: '15px 0'
+                                }}>Загрузка файлов...</div>}
             {filesError && <div style={{ color: 'red' }}>Ошибка: {filesError}</div>}
 
             {!filesIsLoading && !filesError && (
                 <>
                     {files.length === 0 ? (
-                        <div>Нет файлов в текущей директории</div>
+                        <div style={{
+                            textAlign: 'center',
+                            color: '#a9a8a8',
+                            padding: '15px 0'
+                        }}>Нет файлов в текущей директории</div>
                     ) : (
                         files.map(file => (
                             <StorageFile

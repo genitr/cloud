@@ -1,17 +1,18 @@
 import React, { useState, useRef } from 'react';
 import styles from './Modals.module.css';
 import type { UploadFileModalProps, UploadFileData } from '../../types';
+import { formatFileSize } from '../../utils/formatNumber';
 
-const UploadFileModal: React.FC<UploadFileModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onUpload 
+const UploadFileModal: React.FC<UploadFileModalProps> = ({
+  isOpen,
+  onClose,
+  onUpload
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [customNames, setCustomNames] = useState<Map<File, string>>(new Map());
   const [comments, setComments] = useState<Map<File, string>>(new Map());
   const [expandedFile, setExpandedFile] = useState<File | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -45,7 +46,7 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
         name: customNames.get(file) || file.name.replace(/\.[^/.]+$/, ""),
         comment: comments.get(file) || ''
       }));
-      
+
       onUpload(filesToUpload);
       resetState();
       onClose();
@@ -60,7 +61,7 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const files = e.dataTransfer.files;
     if (files?.length) {
       setSelectedFiles(files);
@@ -115,15 +116,6 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
     }
   };
 
-  // Форматирование размера файла
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Б';
-    const k = 1024;
-    const sizes = ['Б', 'КБ', 'МБ', 'ГБ'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-  };
-
   // Получаем список выбранных файлов для отображения
   const getSelectedFilesList = () => {
     if (!selectedFiles) return [];
@@ -143,29 +135,28 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
   };
 
   const selectedFilesList = getSelectedFilesList();
-  
+
   return (
     <div className={styles.modalOverlay} onClick={handleClose}>
-      <div 
-        className={`${styles.modal} ${styles.uploadModal}`} 
+      <div
+        className={`${styles.modal} ${styles.uploadModal}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
           <h3>Загрузить файлы</h3>
           <button className={styles.closeButton} onClick={handleClose}>✕</button>
         </div>
-        
+
         <div className={styles.modalContent}>
           {!selectedFiles ? (
-            // Область для выбора файлов
-            <div 
+            <div
               className={styles.uploadArea}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
               <div className={styles.uploadIcon}>⬆️</div>
               <p>Перетащите файлы сюда или</p>
-              <button 
+              <button
                 className={styles.browseButton}
                 onClick={handleBrowseClick}
                 type="button"
@@ -174,13 +165,13 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
               </button>
             </div>
           ) : (
-            // Список выбранных файлов с возможностью редактирования
+
             <div className={styles.selectedFilesContainer}>
               <div className={styles.selectedFilesHeader}>
                 <span className={styles.selectedFilesCount}>
                   Выбрано файлов: {selectedFiles.length}
                 </span>
-                <button 
+                <button
                   className={styles.clearAllButton}
                   onClick={clearSelection}
                   type="button"
@@ -188,11 +179,11 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
                   ✕ Очистить все
                 </button>
               </div>
-              
+
               <div className={styles.selectedFilesList}>
                 {selectedFilesList.map((item, index) => (
                   <div key={index} className={styles.selectedFileItem}>
-                    <div 
+                    <div
                       className={styles.selectedFileHeader}
                       onClick={() => toggleExpand(item.file)}
                     >
@@ -204,7 +195,7 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
                         <span className={styles.selectedFileSize}>{item.size}</span>
                       </div>
                     </div>
-                    
+
                     {item.isExpanded && (
                       <div className={styles.selectedFileDetails}>
                         <div className={styles.fileDetailRow}>
@@ -224,7 +215,7 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className={styles.fileDetailRow}>
                           <label className={styles.fileDetailLabel}>
                             Комментарий (опционально):
@@ -244,22 +235,22 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
               </div>
             </div>
           )}
-          
-          <input 
+
+          <input
             ref={fileInputRef}
-            type="file" 
-            multiple 
+            type="file"
+            multiple
             className={styles.fileInput}
             onChange={handleFileSelect}
           />
         </div>
-        
+
         <div className={styles.modalFooter}>
           <button className={styles.cancelButton} onClick={handleClose}>
             Отмена
           </button>
-          <button 
-            className={styles.uploadButton} 
+          <button
+            className={styles.uploadButton}
             onClick={handleUpload}
             disabled={!selectedFiles?.length}
           >

@@ -19,6 +19,8 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name', 
             'last_name',
             'is_active', 
+            'is_staff',
+            'is_superuser',
             'date_joined'
         ]
         read_only_fields = ['id', 'is_active', 'date_joined']
@@ -47,6 +49,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'folders_count',
             'is_active', 
             'is_staff', 
+            'is_superuser',
             'date_joined', 
             'last_login'
         ]

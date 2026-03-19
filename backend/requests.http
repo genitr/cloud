@@ -1,0 +1,192 @@
+# примеры API-запросов
+@baseUrl = http://localhost:8000
+@user1 = Token b21604461ede33d243e4e812a3089b8e9f994186
+@user2 = Token 066b4deb2d72c1d9f73b5876d073b1b6d5a1158d
+@userId = 2
+@admin = Token febedd540df44c6001a78e8fada673cab67010dd
+
+
+#  ============= Работа с пользователями =============
+
+# регистрация
+POST {{baseUrl}}/api/users/
+Content-Type: application/json
+
+{
+    "username": "Alex",
+    "email": "alex@example.com",
+    "first_name": "Алексей",
+    "last_name": "",
+    "password": "12345",
+    "password2": "12345"
+}
+###
+
+# вход
+POST {{baseUrl}}/api/users/login/
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "1234"
+}
+###
+
+# выход
+POST {{baseUrl}}/api/users/logout/
+Content-Type: application/json
+Authorization: {{user1}}
+###
+
+# хранилище пользователя
+GET {{baseUrl}}/api/users/8/storage/
+Content-Type: application/json
+Authorization: {{user1}}
+###
+
+#  ============ Текущий пользователь ============
+
+# профиль
+GET {{baseUrl}}/api/users/me/
+Content-Type: application/json
+Authorization: {{user1}}
+###
+
+# полное обновление профиля
+PUT {{baseUrl}}/api/users/me/
+Content-Type: application/json
+Authorization: {{user2}}
+
+{
+    "first_name": "Александр", 
+    "last_name": "Тимофеев", 
+    "email": "alex.timofeev@mail.ru",
+    "current_password": "12345", 
+    "new_password": "54321", 
+    "new_password2": "54321"
+}
+###
+
+# частичное обновление профиля
+PATCH {{baseUrl}}/api/users/me/
+Content-Type: application/json
+Authorization: {{user1}}
+
+{
+    "first_name": "Юрик", 
+    "last_name": ""
+}
+###
+
+#  ============= Только для админов =============
+
+# сделать пользователя супер пользователем
+POST {{baseUrl}}/api/users/{{userId}}/make_superuser/
+Content-Type: application/json
+Authorization: {{user1}}
+###
+
+# сделать пользователя админом
+POST {{baseUrl}}/api/users/3/make_admin/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+# сделать пользователя обычным пользователем 
+POST {{baseUrl}}/api/users/2/remove_admin/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+# блокировка/разблокировка пользователя
+POST {{baseUrl}}/api/users/3/toggle_active/
+Content-Type: application/json
+Authorization: {{user1}}
+###
+
+# проверить свои права
+GET {{baseUrl}}/api/users/check_permissions/
+Content-Type: application/json
+Authorization: {{user2}}
+###
+
+# общая статистика по пользователям
+GET {{baseUrl}}/api/users/stats/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+# Удаление пользователя по id (только для админов)
+DELETE {{baseUrl}}/api/users/2/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+#  ==============================================
+
+#  ================ Файлы и папки ================
+
+# создание папки
+POST {{baseUrl}}/api/folders/
+Content-Type: application/json
+Authorization: {{user2}}
+
+{
+    "name": "Работа",
+    "parent_folder": null
+}
+###
+
+# получение всех папок
+GET {{baseUrl}}/api/folders/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+# получение папки по id
+GET {{baseUrl}}/api/folders/3/contents/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+# детальная информация о папке по id
+GET {{baseUrl}}/api/folders/3/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+# обновление папки
+PUT {{baseUrl}}/api/folders/2/
+Content-Type: application/json
+Authorization: {{user2}}
+
+{
+    "name": "Важные документы",
+    "parent_folder": 1
+}
+###
+
+# Загрузка файла
+POST {{baseUrl}}/api/files/
+Content-Type: application/json
+Authorization: {{user2}}
+
+{
+    "file": "C:/Users/Genitr/Pictures/Screenshots/screen.png",
+    "name": "Снимок экрана",
+    "folder": 2,
+    "comment": "Скриншот"
+}
+###
+
+# Получение всех файлов
+GET {{baseUrl}}/api/files/
+Content-Type: application/json
+Authorization: {{admin}}
+###
+
+# Получение всех файлов
+POST {{baseUrl}}/api/files/100/share/
+Content-Type: application/json
+Authorization: {{admin}}
+###

@@ -638,52 +638,42 @@
 }
 
 .shareModal {
-  max-width: 500px !important;
+  max-width: 600px !important;
 }
 
-.fileInfo {
+.fileStats {
   display: flex;
-  align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.fileIcon {
-  font-size: 32px;
-}
-
-.fileDetails {
-  flex: 1;
-}
-
-.fileName {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-  word-break: break-all;
-}
-
-.fileLabel {
+  margin-top: 4px;
   font-size: 12px;
-  color: #28a745;
-  background: #e8f5e9;
-  padding: 2px 8px;
-  border-radius: 12px;
-  display: inline-block;
+  color: #666;
+}
+
+.fileDate {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
 }
 
 .linkSection {
   margin-bottom: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
 }
 
 .linkLabel {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
   font-weight: 500;
-  color: #666;
+  color: #495057;
   margin-bottom: 8px;
+}
+
+.linkIcon {
+  font-size: 16px;
 }
 
 .linkBox {
@@ -694,17 +684,18 @@
 .linkInput {
   flex: 1;
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
-  font-size: 14px;
-  color: #333;
-  background: #f9f9f9;
+  font-size: 13px;
+  color: #495057;
+  background: white;
+  font-family: monospace;
 }
 
 .linkInput:focus {
   outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
 }
 
 .copyButton {
@@ -714,12 +705,12 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   transition: all 0.2s;
   min-width: 50px;
 }
 
-.copyButton:hover {
+.copyButton:hover:not(:disabled) {
   background: #0056b3;
 }
 
@@ -727,9 +718,18 @@
   background: #28a745;
 }
 
+.copyButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .linkHint {
-  margin-top: 8px;
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: #e7f3ff;
+  border-radius: 4px;
   font-size: 12px;
-  color: #999;
-  font-style: italic;
+  color: #004085;
+  border-left: 3px solid #007bff;
 }

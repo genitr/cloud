@@ -147,49 +147,51 @@ class FileViewSet(viewsets.ModelViewSet):
 
 
 class FileSharingViewSet(viewsets.ReadOnlyModelViewSet):
-    """Чтение для расшариваний"""
-    
     serializer_class = FileSharingSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        """Показываем только свои расшаривания"""
         return FileSharing.objects.filter(created_by=self.request.user)
     
     @action(detail=True, methods=['post'])
     def revoke(self, request, pk=None):
-        """Отзыв доступа"""
         share = self.get_object()
         share.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# Публичный доступ (без аутентификации)
-class PublicShareView(APIView):
-    """Публичный доступ к расшаренному файлу"""
+class PublicShareViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
+    serializer_class = PublicFileShareSerializer
     
-    def get(self, request, token):
+    @action(detail=False, methods=['get'], url_path='(?P<token>[^/.]+)')
+    def info(self, request, token=None):
+        """Получение информации о файле"""
         try:
             share = FileSharing.objects.get(share_token=token)
-            
-            # Записываем просмотр
             share.record_access(request)
-            
-            # Проверяем, нужно ли скачивание
-            if 'download' in request.path:
-                share.downloads_count += 1
-                share.save()
-                return FileResponse(
-                    share.file.file.open('rb'),
-                    as_attachment=True,
-                    filename=share.file.original_name
-                )
-            
-            # Возвращаем информацию о файле
-            serializer = PublicFileShareSerializer(share)
+            serializer = self.get_serializer(share)
             return Response(serializer.data)
+        except FileSharing.DoesNotExist:
+            return Response(
+                {"error": "Ссылка недействительна"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    @action(detail=False, methods=['get'], url_path='(?P<token>[^/.]+)/download')
+    def download(self, request, token=None):
+        """Скачивание файла"""
+        try:
+            share = FileSharing.objects.get(share_token=token)
+            share.record_access(request)
+            share.downloads_count += 1
+            share.save()
             
+            return FileResponse(
+                share.file.file.open('rb'),
+                as_attachment=True,
+                filename=share.file.original_name
+            )
         except FileSharing.DoesNotExist:
             return Response(
                 {"error": "Ссылка недействительна"},

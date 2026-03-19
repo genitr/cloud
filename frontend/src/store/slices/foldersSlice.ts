@@ -6,9 +6,38 @@ import type {
   FolderTree,
   FolderContents,
   FoldersState,
-  RootState
+  RootState,
 } from '../../types';
 import { API_URL } from '../../types';
+
+export const selectFolderFileCount = (state: RootState, folderId: number) => {
+  const { folders } = state.folders;
+  const { files } = state.files;
+  
+  const calculateCount = (fId: number): number => {
+    const subFolders = folders.filter(f => f.parent_folder === fId);
+    const currentFolder = folders.find(f => f.id === fId);
+    const folderFiles = files.filter(f => 
+      currentFolder && f.folder_name === currentFolder.name
+    );
+
+    let count = folderFiles.length;
+
+    subFolders.forEach(subFolder => {
+      count += calculateCount(subFolder.id);
+    });
+
+    return count;
+  };
+
+  return calculateCount(folderId);
+};
+
+export const selectFolderStats = (state: RootState, folderId: number) => {
+  const fileCount = selectFolderFileCount(state, folderId);
+  
+  return fileCount;
+};
 
 const initialState: FoldersState = {
   folders: [],

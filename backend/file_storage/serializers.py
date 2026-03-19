@@ -19,6 +19,8 @@ class FolderSerializer(serializers.ModelSerializer):
     subfolders_count = serializers.IntegerField(source='subfolders.count', read_only=True)
     files_count = serializers.IntegerField(source='files.count', read_only=True)
     full_path = serializers.SerializerMethodField()
+    size = serializers.SerializerMethodField()
+    size_formatted = serializers.SerializerMethodField()
     
     class Meta:
         model = Folder
@@ -32,10 +34,38 @@ class FolderSerializer(serializers.ModelSerializer):
             'subfolders_count',
             'files_count',
             'full_path',
+            'size',
+            'size_formatted',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'owner', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'owner', 'created_at', 'updated_at', 'size', 'size_formatted']
+    
+    def get_size(self, obj):
+        """Расчет размера папки (сумма всех файлов в папке и подпапках)"""
+        total_size = 0
+        
+        # Функция для рекурсивного сбора файлов
+        def collect_files(folder):
+            nonlocal total_size
+            # Добавляем файлы из текущей папки
+            for file in folder.files.all():
+                total_size += file.size
+            # Рекурсивно обрабатываем подпапки
+            for subfolder in folder.subfolders.all():
+                collect_files(subfolder)
+        
+        collect_files(obj)
+        return total_size
+    
+    def get_size_formatted(self, obj):
+        """Форматирование размера"""
+        size = self.get_size(obj)
+        for unit in ['Б', 'КБ', 'МБ', 'ГБ']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} ТБ"
     
     def get_parent_info(self, obj):
         """Информация о родительской папке"""
@@ -267,7 +297,8 @@ class FileListSerializer(serializers.ModelSerializer):
             'folder_name',
             'size_formatted',
             'content_type',
-            'uploaded_at'
+            'uploaded_at',
+            'owner',
         ]
     
     def get_size_formatted(self, obj):
@@ -284,7 +315,7 @@ class FileSharingSerializer(serializers.ModelSerializer):
 
     file_info = serializers.SerializerMethodField()
     created_by_info = serializers.SerializerMethodField()
-    share_url = serializers.ReadOnlyField(source='share_url')
+    share_url = serializers.ReadOnlyField()  # Убрали source='share_url'
     
     class Meta:
         model = FileSharing

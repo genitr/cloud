@@ -4,6 +4,8 @@ import HomePage from '../pages/HomePage/HomePage';
 import RegistrationPage from '../pages/RegistrationPage/RegistrationPage';
 import LoginPage from '../pages/LoginPage/LoginPage'
 import MainPage from '../pages/MainPage/MainPage'
+import AdminPage from '../pages/AdminPage/AdminPage';
+import SharedFilePage from '../pages/SharedFilePage/SharedFilePage';
 
 // Создаем конфигурацию маршрутов
 export const router = createBrowserRouter([
@@ -25,6 +27,14 @@ export const router = createBrowserRouter([
       {
         path: '/main',
         element: <MainPage />,
+      },
+      {
+        path: '/admin',
+        element: <AdminPage />,
+      },
+      {
+        path: '/share/:token',
+        element: <SharedFilePage />,
       },
       {
         // Страница 404 (не найдено)

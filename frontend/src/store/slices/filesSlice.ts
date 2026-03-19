@@ -143,7 +143,6 @@ export const uploadFile = createAsyncThunk<
       const data: FileItem = await response.json();
       console.log('Upload successful to folder:', data.folder);
       
-      // Обновляем список файлов ТОЛЬКО для текущей папки
       await dispatch(fetchFiles({ folder: fileData.folder || null }));
       
       return data;
@@ -291,7 +290,11 @@ const filesSlice = createSlice({
       })
       .addCase(fetchFiles.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.files = action.payload;
+
+        state.files = action.payload.map(file => ({
+          ...file,
+          owner: (file as FileListItem).owner || (file as FileListItem).owner_info?.id
+        }));
         state.totalCount = action.payload.length;
       })
       .addCase(fetchFiles.rejected, (state, action) => {

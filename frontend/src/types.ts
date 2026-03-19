@@ -226,6 +226,8 @@ export interface Folder {
   full_path: string;
   created_at: string;
   updated_at: string;
+  size?: number;
+  size_formatted?: string;
 }
 
 export interface FolderCreate {
@@ -247,11 +249,11 @@ export interface FolderContents {
     full_path: string;
   };
   subfolders: Folder[];
-  files: FileItem[]; // Изменено с File на FileItem
+  files: FileItem[];
 }
 
 // ==================== ФАЙЛЫ ====================
-export interface FileItem { // Переименовано с File на FileItem
+export interface FileItem {
   id: number;
   name: string;
   original_name: string;
@@ -282,6 +284,13 @@ export interface FileListItem {
   size_formatted: string;
   content_type: string;
   uploaded_at: string;
+  owner?: number;
+  owner_info?: {
+    id: number;
+    username: string;
+    email: string;
+    storage_url: string | null;
+  };
 }
 
 export interface FileUploadData {
@@ -316,6 +325,7 @@ export interface FileSharing {
   };
   share_token: string;
   share_url: string;
+  view_url?: string;
   downloads_count: number;
   views_count: number;
   created_at: string;
@@ -457,8 +467,12 @@ export interface ShareData {
 }
 
 export interface ShareModalProps extends BaseModalProps {
-  onShare: (shareData: ShareData) => void;
   itemName: string | undefined;
+  shareUrl?: string;
+  viewUrl?: string;
+  downloadsCount?: number;
+  viewsCount?: number;
+  createdAt?: string;
 }
 
 export interface UploadFileData {

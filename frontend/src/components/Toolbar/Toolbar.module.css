@@ -1,8 +1,10 @@
 .toolbar {
   display: flex;
+  position: sticky;
+  flex: 1;
+  top: 75px;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
   padding: 10px;
   background: #f8f9fa;
   border-radius: 8px;

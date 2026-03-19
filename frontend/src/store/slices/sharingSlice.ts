@@ -3,6 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { 
   FileSharing, 
   PublicFileShare,
+  RootState,
   SharingState 
 } from '../../types';
 import { API_URL } from '../../types';
@@ -46,43 +47,64 @@ export const fetchShares = createAsyncThunk(
 );
 
 // Создать расшаривание файла
-export const createShare = createAsyncThunk(
+export const createShare = createAsyncThunk<
+  FileSharing,
+  number,
+  { state: RootState; rejectValue: string }
+>(
   'sharing/create',
-  async (fileId: number, { getState, rejectWithValue }) => {
+  async (fileId, { getState, rejectWithValue }) => {
     try {
-      const state = getState() as { auth: { token: string | null } };
+      const state = getState();
       const token = state.auth.token;
 
+      console.log('Creating share for file:', fileId);
+      
       const response = await fetch(`${API_URL}/files/${fileId}/share/`, {
         method: 'POST',
         headers: getAuthHeaders(token),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        return rejectWithValue(error.error || 'Ошибка создания расшаривания');
+        const errorData = await response.json().catch(() => ({}));
+        return rejectWithValue(errorData.error || 'Ошибка создания расшаривания');
       }
 
       const data: FileSharing = await response.json();
-      return data;
+
+      const baseApiUrl = API_URL;
+      const downloadUrl = `${baseApiUrl}/public/${data.share_token}/download/`;
+      const viewUrl = `${baseApiUrl}/public/${data.share_token}/`;
+      
+      return {
+        ...data,
+        share_url: downloadUrl,
+        view_url: viewUrl,
+      };
     } catch (error) {
-      return rejectWithValue('Ошибка при создании расшаривания: ' + error);
+      console.error('Share creation error:', error);
+      return rejectWithValue('Ошибка при создании расшаривания');
     }
   }
 );
 
 // Получить публичный расшаренный файл по токену
-export const fetchPublicShare = createAsyncThunk(
+export const fetchPublicShare = createAsyncThunk<
+  PublicFileShare,
+  string,
+  { rejectValue: string }
+>(
   'sharing/fetchPublic',
-  async (token: string, { rejectWithValue }) => {
+  async (token, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_URL}/public/share/${token}/`);
+      console.log('Fetching public share for token:', token);
+      const response = await fetch(`${API_URL}/public/${token}/`);
 
       if (!response.ok) {
         throw new Error('Ошибка загрузки расшаренного файла');
       }
 
-      const data: PublicFileShare = await response.json();
+      const data = await response.json();
       return data;
     } catch (error) {
       return rejectWithValue('Ошибка при загрузке расшаренного файла: ' + error);
@@ -91,11 +113,16 @@ export const fetchPublicShare = createAsyncThunk(
 );
 
 // Скачать публичный файл
-export const downloadPublicFile = createAsyncThunk(
+export const downloadPublicFile = createAsyncThunk<
+  string,
+  string,
+  { rejectValue: string }
+>(
   'sharing/downloadPublic',
-  async (token: string, { rejectWithValue }) => {
+  async (token, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_URL}/public/share/${token}/download/`);
+      console.log('Downloading public file with token:', token);
+      const response = await fetch(`${API_URL}/public/${token}/download/`);
 
       if (!response.ok) {
         throw new Error('Ошибка скачивания файла');

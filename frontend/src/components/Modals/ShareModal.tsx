@@ -1,107 +1,132 @@
 import React, { useState } from 'react';
 import styles from './Modals.module.css';
-import type { ShareModalProps, Permission } from '../../types';
+import type { ShareModalProps } from '../../types';
 
 const ShareModal: React.FC<ShareModalProps> = ({ 
   isOpen, 
   onClose, 
-  onShare, 
-  itemName 
+  itemName,
+  shareUrl,
+  viewUrl,
+  downloadsCount,
+  viewsCount,
 }) => {
-  const [email, setEmail] = useState('');
-  const [permission, setPermission] = useState<Permission>('view');
+  const [copied, setCopied] = useState<'download' | 'view' | null>(null);
   
   if (!isOpen) return null;
   
-  const handleShare = () => {
-    if (email.trim()) {
-      onShare({ email, permission });
-      setEmail('');
-      onClose();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose();
-    } else if (e.key === 'Enter' && email.trim()) {
-      handleShare();
-    }
-  };
-
-  const handleCopyLink = async () => {
+  const handleCopyLink = async (url: string, type: 'download' | 'view') => {
     try {
-      await navigator.clipboard.writeText('https://storage.example.com/share/abc123');
-
+      await navigator.clipboard.writeText(url);
+      setCopied(type);
+      setTimeout(() => setCopied(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
   };
-  
+
+  const handleTestLink = (url: string) => {
+    window.open(url, '_blank');
+  };
+
+
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div 
+        className={`${styles.modal} ${styles.shareModal}`} 
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.modalHeader}>
-          <h3>Поделиться "{itemName}"</h3>
+          <h3>Поделиться файлом</h3>
           <button className={styles.closeButton} onClick={onClose}>✕</button>
         </div>
         
         <div className={styles.modalContent}>
-          <label className={styles.label} htmlFor="shareEmail">Email получателя</label>
-          <input
-            id="shareEmail"
-            type="email"
-            className={styles.input}
-            value={email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="user@example.com"
-          />
-          
-          <label className={styles.label} htmlFor="permission">Права доступа</label>
-          <select 
-            id="permission"
-            className={styles.select}
-            value={permission}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
-              setPermission(e.target.value as Permission)
-            }
-          >
-            <option value="view">Только просмотр</option>
-            <option value="edit">Редактирование</option>
-            <option value="comment">Комментирование</option>
-          </select>
-          
+          <div className={styles.fileInfo}>
+            <div className={styles.fileIcon}>📄</div>
+            <div className={styles.fileDetails}>
+              <div className={styles.fileName}>{itemName}</div>
+              <div className={styles.fileStats}>
+                <span>👁️ {viewsCount || 0} просмотров</span>
+                <span>⬇️ {downloadsCount || 0} скачиваний</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Ссылка для скачивания */}
           <div className={styles.linkSection}>
-            <p className={styles.linkLabel}>Или скопируйте ссылку:</p>
+            <div className={styles.linkLabel}>
+              <span className={styles.linkIcon}>⬇️</span>
+              Ссылка для скачивания:
+            </div>
             <div className={styles.linkBox}>
               <input 
                 type="text" 
                 readOnly 
-                value="https://storage.example.com/share/abc123"
+                value={shareUrl || ''}
                 className={styles.linkInput}
+                onClick={(e) => e.currentTarget.select()}
               />
               <button 
-                className={styles.copyButton} 
-                onClick={handleCopyLink}
-                type="button"
+                className={`${styles.copyButton} ${copied === 'download' ? styles.copied : ''}`} 
+                onClick={() => handleCopyLink(shareUrl || '', 'download')}
+                title="Копировать ссылку"
               >
-                📋
+                {copied === 'download' ? '✓' : '📋'}
+              </button>
+              <button 
+                className={styles.testButton}
+                onClick={() => handleTestLink(shareUrl || '')}
+                title="Открыть в новой вкладке"
+              >
+                🔗
               </button>
             </div>
+            <div className={styles.linkHint}>
+              Прямая ссылка на скачивание файла
+            </div>
           </div>
+
+          {/* Ссылка для просмотра информации */}
+          {viewUrl && (
+            <div className={styles.linkSection}>
+              <div className={styles.linkLabel}>
+                <span className={styles.linkIcon}>👁️</span>
+                Ссылка для просмотра:
+              </div>
+              <div className={styles.linkBox}>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={viewUrl}
+                  className={styles.linkInput}
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <button 
+                  className={`${styles.copyButton} ${copied === 'view' ? styles.copied : ''}`} 
+                  onClick={() => handleCopyLink(viewUrl, 'view')}
+                  title="Копировать ссылку"
+                >
+                  {copied === 'view' ? '✓' : '📋'}
+                </button>
+                <button 
+                  className={styles.testButton}
+                  onClick={() => handleTestLink(viewUrl)}
+                  title="Открыть в новой вкладке"
+                >
+                  🔗
+                </button>
+              </div>
+              <div className={styles.linkHint}>
+                Страница с информацией о файле
+              </div>
+            </div>
+          )}
         </div>
         
         <div className={styles.modalFooter}>
-          <button className={styles.cancelButton} onClick={onClose}>
+          <button className={styles.closeButton} onClick={onClose}>
             Закрыть
-          </button>
-          <button 
-            className={styles.shareButton} 
-            onClick={handleShare}
-            disabled={!email.trim()}
-          >
-            Отправить приглашение
           </button>
         </div>
       </div>
