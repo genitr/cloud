@@ -38,9 +38,6 @@ class FileSharingAdmin(admin.ModelAdmin):
     list_display = [
         'file', 
         'created_by',
-        'downloads_count', 
-        'views_count',
         'created_at',
-        'last_accessed'
     ]
-    list_filter = ['created_by', 'downloads_count', 'views_count']
+    list_filter = ['created_by',]

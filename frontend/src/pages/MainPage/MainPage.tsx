@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import S from './MainPage.module.css';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchFolders, createFolder, deleteFolder } from '../../store/slices/foldersSlice';
-import { fetchFiles, uploadFile, deleteFile, downloadFile } from '../../store/slices/filesSlice';
+import { fetchFiles, uploadFile, deleteFile, downloadFile, updateFile } from '../../store/slices/filesSlice';
 import { fetchCurrentUser } from '../../store/slices/authSlice';
 import { createShare } from '../../store/slices/sharingSlice';
 import { fetchStorageInfo } from '../../store/slices/usersSlice';
@@ -14,8 +14,10 @@ import UploadFileModal from '../../components/Modals/UploadFileModal';
 import CreateFolderModal from '../../components/Modals/CreateFolderModal';
 import DeleteConfirmModal from '../../components/Modals/DeleteConfirmModal';
 import ShareModal from '../../components/Modals/ShareModal';
+import FilePreviewModal from '../../components/Modals/FilePreviewModal';
 import type { Folder, FileListItem, UploadFileData } from '../../types';
 import { Link } from 'react-router-dom';
+import RenameFileModal from '../../components/Modals/RenameFileModal';
 
 const MainPage = () => {
   const dispatch = useAppDispatch();
@@ -25,7 +27,11 @@ const MainPage = () => {
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [selectedFileForPreview, setSelectedFileForPreview] = useState<FileListItem | null>(null);
+  const [selectedFileForRename, setSelectedFileForRename] = useState<FileListItem | null>(null);
+
   // Состояния для выбранных элементов
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [selectedFile, setSelectedFile] = useState<FileListItem | null>(null);
@@ -40,15 +46,11 @@ const MainPage = () => {
     file: FileListItem | null;
     shareUrl: string;
     viewUrl: string;
-    downloadsCount: number;
-    viewsCount: number;
     createdAt: string;
   }>({
     file: null,
     shareUrl: '',
     viewUrl: '',
-    downloadsCount: 0,
-    viewsCount: 0,
     createdAt: ''
   });
 
@@ -111,6 +113,17 @@ const MainPage = () => {
 
   }, [dispatch, user, isAuthenticated]);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    // Обновляем статистику каждые 30 секунд
+    const interval = setInterval(() => {
+      dispatch(fetchFiles({}));
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [dispatch, isAuthenticated]);
+
   // Фильтруем файлы по текущей папке
   const filteredFiles = useMemo(() => {
     if (!files.length) return [];
@@ -153,14 +166,54 @@ const MainPage = () => {
     }
   };
 
-  // Обработчики для файлов
-  const handleFileClick = (file: FileListItem) => {
-    console.log('Файл открыт:', file);
-  };
-
   const handleFileDelete = (file: FileListItem) => {
     setSelectedFile(file);
     setDeleteModalOpen(true);
+  };
+
+  // Обработчик для открытия превью (клик по файлу)
+  const handleFilePreview = (file: FileListItem) => {
+    setSelectedFileForPreview(file);
+    setPreviewModalOpen(true);
+  };
+
+  // Обработчик для открытия модалки переименования (клик по кнопке ✏️)
+  const handleRenameClick = (file: FileListItem) => {
+    setSelectedFileForRename(file);
+    setRenameModalOpen(true);
+  };
+
+  // Обработчик для переименования файла
+  const handleFileRename = async (newName: string, newComment?: string) => {
+    if (!selectedFileForRename) return;
+    
+    try {
+      const updateData: { name?: string; comment?: string } = {};
+      
+      if (newName && newName !== selectedFileForRename.name) {
+        updateData.name = newName;
+      }
+      
+      if (newComment !== undefined && newComment !== selectedFileForRename.comment) {
+        updateData.comment = newComment;
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return; // Ничего не изменилось
+      }
+      
+      await dispatch(updateFile({ 
+        id: selectedFileForRename.id, 
+        data: updateData
+      })).unwrap();
+      
+      // Обновляем список файлов
+      await dispatch(fetchFiles({}));
+      
+    } catch (error) {
+      console.error('Ошибка при обновлении файла:', error);
+      throw error;
+    }
   };
 
   const handleFileShare = async (file: FileListItem) => {
@@ -171,8 +224,6 @@ const MainPage = () => {
         file,
         shareUrl: result.share_url,
         viewUrl: `${window.location.origin}/share/${result.share_token}`,
-        downloadsCount: result.downloads_count,
-        viewsCount: result.views_count,
         createdAt: result.created_at
       });
       
@@ -290,7 +341,8 @@ const MainPage = () => {
             onFileDelete={handleFileDelete}
             onFileShare={handleFileShare}
             onFileDownload={handleFileDownload}
-            onFileClick={handleFileClick}
+            onFilePreview={handleFilePreview}
+            onFileRename={handleRenameClick}
             currentFolderId={currentFolderId}
           />
         </div>
@@ -328,17 +380,33 @@ const MainPage = () => {
             file: null,
             shareUrl: '',
             viewUrl: '',
-            downloadsCount: 0,
-            viewsCount: 0,
             createdAt: ''
           });
         }}
         itemName={shareData.file?.name}
         shareUrl={shareData.shareUrl}
         viewUrl={shareData.viewUrl}
-        downloadsCount={shareData.downloadsCount}
-        viewsCount={shareData.viewsCount}
         createdAt={shareData.createdAt}
+      />
+
+      <FilePreviewModal
+        isOpen={previewModalOpen}
+        onClose={() => {
+          setPreviewModalOpen(false);
+          setSelectedFileForPreview(null);
+        }}
+        file={selectedFileForPreview}
+      />
+
+      {/* Модалка переименования */}
+      <RenameFileModal
+        isOpen={renameModalOpen}
+        onClose={() => {
+          setRenameModalOpen(false);
+          setSelectedFileForRename(null);
+        }}
+        file={selectedFileForRename}
+        onRename={handleFileRename}
       />
     </div>
   );

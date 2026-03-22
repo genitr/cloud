@@ -16,8 +16,9 @@ interface StorageFileListProps {
     onFileDelete: (file: FileListItem) => void;
     onFileShare: (file: FileListItem) => void;
     onFileDownload: (file: FileListItem) => void;
-    onFileClick: (folder: FileListItem) => void;
+    onFilePreview: (file: FileListItem) => void;
     currentFolderId?: number | null;
+    onFileRename?: (file: FileListItem) => void;
 }
 
 const StorageFileList: React.FC<StorageFileListProps> = ({
@@ -32,8 +33,9 @@ const StorageFileList: React.FC<StorageFileListProps> = ({
     onFileDelete,
     onFileShare,
     onFileDownload,
-    onFileClick,
+    onFilePreview,
     currentFolderId,
+    onFileRename,
 }) => {
     // Фильтруем папки по текущей папке
     const filteredFolders = folders.filter(f => f.parent_folder === currentFolderId);
@@ -42,8 +44,10 @@ const StorageFileList: React.FC<StorageFileListProps> = ({
         <div className={S.fileList}>
             <div className={S.listHeader}>
                 <div className={S.headerName}>Название</div>
-                <div className={S.headerModified}>Изменён</div>
+                <div className={S.headerName}>Комментарий</div>
                 <div className={S.headerSize}>Размер</div>
+                <div className={S.headerModified}>Загружен</div>
+                <div className={S.headerSize}>Последнее скачивание</div>
                 <div className={S.headerActions}>Действия</div>
             </div>
 
@@ -86,7 +90,8 @@ const StorageFileList: React.FC<StorageFileListProps> = ({
                                 onDelete={onFileDelete}
                                 onShare={onFileShare}
                                 onDownload={onFileDownload}
-                                onClick={() => onFileClick(file)}
+                                onPreview={onFilePreview}
+                                onRename={onFileRename ? () => onFileRename(file) : undefined}
                             />
                         ))
                     )}

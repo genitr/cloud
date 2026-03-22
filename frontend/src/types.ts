@@ -275,6 +275,9 @@ export interface FileItem {
   logical_path: string;
   uploaded_at: string;
   updated_at: string;
+  downloads_count?: number;
+  views_count?: number;
+  last_downloaded_at?: string | null;
 }
 
 export interface FileListItem {
@@ -284,6 +287,10 @@ export interface FileListItem {
   size_formatted: string;
   content_type: string;
   uploaded_at: string;
+  comment?: string;
+  downloads_count?: number;
+  views_count?: number;
+  last_downloaded_at?: string | null;
   owner?: number;
   owner_info?: {
     id: number;
@@ -326,10 +333,7 @@ export interface FileSharing {
   share_token: string;
   share_url: string;
   view_url?: string;
-  downloads_count: number;
-  views_count: number;
   created_at: string;
-  last_accessed: string | null;
 }
 
 export interface PublicFileShare {

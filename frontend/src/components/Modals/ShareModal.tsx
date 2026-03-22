@@ -8,8 +8,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
   itemName,
   shareUrl,
   viewUrl,
-  downloadsCount,
-  viewsCount,
 }) => {
   const [copied, setCopied] = useState<'download' | 'view' | null>(null);
   
@@ -46,10 +44,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
             <div className={styles.fileIcon}>📄</div>
             <div className={styles.fileDetails}>
               <div className={styles.fileName}>{itemName}</div>
-              <div className={styles.fileStats}>
-                <span>👁️ {viewsCount || 0} просмотров</span>
-                <span>⬇️ {downloadsCount || 0} скачиваний</span>
-              </div>
             </div>
           </div>
 

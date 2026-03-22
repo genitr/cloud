@@ -1,6 +1,6 @@
 .item {
   display: grid;
-  grid-template-columns: auto 3fr 1fr 1fr 1fr;
+  grid-template-columns: auto 3fr 1fr 1fr 1fr 1fr 1fr;
   align-items: center;
   padding: 10px 15px;
   color: #5b5c5d;
@@ -39,7 +39,7 @@
 
 .itemActions {
   display: flex;
-  gap: 10px;
+  gap: 2px;
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -53,8 +53,7 @@
   border: none;
   font-size: 18px;
   cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
+  padding: 2px;
 }
 
 .actionButton:hover {

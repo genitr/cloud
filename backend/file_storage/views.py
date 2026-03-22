@@ -116,6 +116,8 @@ class FileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
+        file_obj.increment_downloads()
+
         # Отдаем файл
         response = FileResponse(
             file_obj.file.open('rb'),
@@ -144,6 +146,24 @@ class FileViewSet(viewsets.ModelViewSet):
         
         serializer = FileSharingSerializer(sharing, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def update(self, request, *args, **kwargs):
+        """Обновление файла (имя, комментарий)"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Проверяем права
+        if instance.owner != request.user:
+            return Response(
+                {"error": "Вы можете редактировать только свои файлы"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
 
 
 class FileSharingViewSet(viewsets.ReadOnlyModelViewSet):
@@ -163,6 +183,40 @@ class FileSharingViewSet(viewsets.ReadOnlyModelViewSet):
 class PublicShareViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = PublicFileShareSerializer
+
+    def get(self, request, token):
+        try:
+            share = FileSharing.objects.get(share_token=token)
+            
+            # Увеличиваем счетчик просмотров файла
+            share.file.increment_views()
+            
+            # Записываем просмотр расшаривания
+            share.record_access(request)
+            
+            # Проверяем путь для определения действия
+            if 'download' in request.path:
+                # Увеличиваем счетчик скачиваний файла
+                share.file.increment_downloads()
+                
+                share.downloads_count += 1
+                share.save()
+                
+                return FileResponse(
+                    share.file.file.open('rb'),
+                    as_attachment=True,
+                    filename=share.file.original_name
+                )
+            
+            # Возвращаем информацию о файле
+            serializer = PublicFileShareSerializer(share)
+            return Response(serializer.data)
+            
+        except FileSharing.DoesNotExist:
+            return Response(
+                {"error": "Ссылка недействительна"},
+                status=status.HTTP_404_NOT_FOUND
+            )
     
     @action(detail=False, methods=['get'], url_path='(?P<token>[^/.]+)')
     def info(self, request, token=None):
@@ -197,3 +251,4 @@ class PublicShareViewSet(viewsets.GenericViewSet):
                 {"error": "Ссылка недействительна"},
                 status=status.HTTP_404_NOT_FOUND
             )
+    

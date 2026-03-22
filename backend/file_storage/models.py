@@ -134,6 +134,20 @@ class File(models.Model):
         verbose_name="Обновлено",
     )
 
+    downloads_count = models.PositiveIntegerField(
+        default=0, 
+        editable=False
+    )
+    views_count = models.PositiveIntegerField(
+        default=0, 
+        editable=False
+    )
+    last_downloaded_at = models.DateTimeField(
+        null=True, 
+        blank=True, 
+        editable=False
+    )
+
     class Meta:
         verbose_name = 'Файл'
         verbose_name_plural = 'Файлы'
@@ -178,6 +192,17 @@ class File(models.Model):
     def get_physical_path(self):
         """Физический путь на диске"""
         return self.file.path
+    
+    def increment_downloads(self):
+        """Увеличить счетчик скачиваний"""
+        self.downloads_count += 1
+        self.last_downloaded_at = timezone.now()
+        self.save(update_fields=['downloads_count', 'last_downloaded_at'])
+    
+    def increment_views(self):
+        """Увеличить счетчик просмотров"""
+        self.views_count += 1
+        self.save(update_fields=['views_count'])
 
 
 class FileSharing(models.Model):
@@ -205,27 +230,11 @@ class FileSharing(models.Model):
         verbose_name='Токен доступа',
     )
     
-    downloads_count = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Скачиваний',
-    )
-    
-    views_count = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Просмотров',
-    )
-    
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Создано', 
     )
 
-    last_accessed = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='Последний доступ',
-    )
-    
     class Meta:
         verbose_name = 'Расшаривание'
         verbose_name_plural = 'Расшаривания'
@@ -241,11 +250,4 @@ class FileSharing(models.Model):
     def share_url(self):
         """Полная ссылка для доступа"""
         return f"/share/{self.share_token}/"
-    
-    def record_access(self, request=None):
-        """Записывает факт доступа к файлу"""
-        self.views_count += 1
-        if request and request.method == 'GET' and 'download' in request.path:
-            self.downloads_count += 1
-        self.last_accessed = timezone.now()
-        self.save(update_fields=['views_count', 'downloads_count', 'last_accessed'])
+

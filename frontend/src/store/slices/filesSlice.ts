@@ -205,7 +205,7 @@ export const updateFile = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >(
   'files/update',
-  async ({ id, data }, { getState, rejectWithValue }) => {
+  async ({ id, data }, { getState, rejectWithValue, dispatch }) => {
     try {
       const state = getState();
       const token = state.auth.token;
@@ -222,6 +222,10 @@ export const updateFile = createAsyncThunk<
       }
 
       const updatedFile: FileItem = await response.json();
+      
+      // После успешного обновления обновляем список файлов
+      await dispatch(fetchFiles({}));
+      
       return updatedFile;
     } catch (error) {
       return rejectWithValue('Ошибка при обновлении файла: ' + error);

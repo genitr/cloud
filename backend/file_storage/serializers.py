@@ -179,6 +179,9 @@ class FileSerializer(serializers.ModelSerializer):
     owner_info = serializers.SerializerMethodField()
     size_formatted = serializers.SerializerMethodField()
     file_url = serializers.SerializerMethodField()
+    downloads_count = serializers.IntegerField(read_only=True)
+    views_count = serializers.IntegerField(read_only=True)
+    last_downloaded_at = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = File
@@ -199,6 +202,9 @@ class FileSerializer(serializers.ModelSerializer):
             'logical_path',
             'uploaded_at',
             'updated_at',
+            'downloads_count',
+            'views_count',
+            'last_downloaded_at',
         ]
         read_only_fields = [
             'id', 
@@ -207,7 +213,10 @@ class FileSerializer(serializers.ModelSerializer):
             'content_type', 
             'uploaded_at', 
             'updated_at',
-            'owner'
+            'owner',
+            'downloads_count',
+            'views_count',
+            'last_downloaded_at',
         ]
     
     def get_file_url(self, obj):
@@ -288,6 +297,9 @@ class FileListSerializer(serializers.ModelSerializer):
     
     folder_name = serializers.CharField(source='folder.name', read_only=True, default='Корень')
     size_formatted = serializers.SerializerMethodField()
+    downloads_count = serializers.IntegerField(read_only=True)
+    views_count = serializers.IntegerField(read_only=True)
+    last_downloaded_at = serializers.DateTimeField(read_only=True)
     
     class Meta:
         model = File
@@ -299,6 +311,10 @@ class FileListSerializer(serializers.ModelSerializer):
             'content_type',
             'uploaded_at',
             'owner',
+            'comment',
+            'downloads_count',
+            'views_count',
+            'last_downloaded_at',
         ]
     
     def get_size_formatted(self, obj):
@@ -315,7 +331,7 @@ class FileSharingSerializer(serializers.ModelSerializer):
 
     file_info = serializers.SerializerMethodField()
     created_by_info = serializers.SerializerMethodField()
-    share_url = serializers.ReadOnlyField()  # Убрали source='share_url'
+    share_url = serializers.ReadOnlyField()
     
     class Meta:
         model = FileSharing
@@ -327,18 +343,12 @@ class FileSharingSerializer(serializers.ModelSerializer):
             'created_by_info',
             'share_token',
             'share_url',
-            'downloads_count',
-            'views_count',
             'created_at',
-            'last_accessed',
         ]
         read_only_fields = [
             'id',
             'share_token',
-            'downloads_count',
-            'views_count',
             'created_at',
-            'last_accessed',
             'created_by'
         ]
     

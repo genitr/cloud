@@ -1,8 +1,8 @@
 export const validateLogin = (login: string): string | undefined => {
   if (!login.trim()) {
     return 'Логин обязателен';
-  } else if (login.length < 3) {
-    return 'Логин должен содержать минимум 3 символа';
+  } else if (login.length < 4) {
+    return 'Логин должен содержать минимум 4 символа';
   } else if (login.length > 20) {
     return 'Логин не должен превышать 20 символов';
   } else if (!/^[a-zA-Z0-9_]+$/.test(login)) {
@@ -16,8 +16,8 @@ export const validatePassword = (password: string): string | undefined => {
     return 'Пароль обязателен';
   } else if (password.length < 6) {
     return 'Пароль должен содержать минимум 6 символов';
-  } else if (!/(?=.*[0-9])(?=.*[a-zA-Z])/.test(password)) {
-    return 'Пароль должен содержать хотя бы одну букву и одну цифру';
+  } else if (!/(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])/.test(password)) {
+    return 'Пароль должен содержать цифру, строчную букву, заглавную букву и специальный символ';
   }
   return undefined;
 };
