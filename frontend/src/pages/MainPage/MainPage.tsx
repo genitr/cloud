@@ -109,7 +109,6 @@ const MainPage = () => {
 
     dispatch(fetchFolders());
     dispatch(fetchFiles({}));
-    console.log('user', user)
 
   }, [dispatch, user, isAuthenticated]);
 
@@ -247,16 +246,14 @@ const MainPage = () => {
     try {
       for (let i = 0; i < filesData.length; i++) {
         const { file, name, comment } = filesData[i];
-        console.log(`Загрузка файла ${i + 1}/${filesData.length} в папку:`, currentFolderId);
         
-        const result = await dispatch(uploadFile({
+        await dispatch(uploadFile({
           file,
           name: name || undefined,
           comment: comment || undefined,
           folder: currentFolderId 
         })).unwrap();
         
-        console.log(`Файл успешно загружен в папку ${currentFolderId}:`, result);
       }
     } catch (error) {
       console.error('Ошибка при загрузке файлов:', error);

@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,6 +16,9 @@ from .serializers import (
 )
 from .permissions import IsAdminUser
 
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -73,14 +78,17 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Анонимные пользователи ничего не видят
         if not user.is_authenticated:
+            logger.debug(f"Анонимный запрос к queryset, возвращаем пустой результат")
             return User.objects.none()
         
         # Админы видят всех
         if user.is_staff or user.is_superuser:
+            logger.debug(f"Админ {user.username} запросил полный список пользователей")
             return User.objects.all()
         
         # Обычные пользователи видят только себя
         if self.action == 'list':
+            logger.debug(f"Пользователь {user.username} запросил список, возвращаем только себя")
             return self.queryset.filter(id=user.id)
         
         return self.queryset
@@ -99,10 +107,14 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         
         if request.method == 'GET':
+            logger.info(f"Пользователь {user.username} (ID: {user.id}) запросил свой профиль")
             serializer = self.get_serializer(user)
             return Response(serializer.data)
         
         elif request.method in ['PUT', 'PATCH']:
+            logger.info(f"Пользователь {user.username} (ID: {user.id}) обновляет свой профиль")
+            logger.debug(f"Данные обновления: {request.data}")
+
             serializer = UserUpdateSerializer(
                 user,
                 data=request.data,
@@ -111,6 +123,8 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
+
+            logger.info(f"Профиль пользователя {user.username} (ID: {user.id}) успешно обновлен")
             
             # Возвращаем обновленные данные
             detail_serializer = UserDetailSerializer(user)
@@ -127,6 +141,9 @@ class UserViewSet(viewsets.ModelViewSet):
             "password": "secret123"
         }
         """
+        username = request.data.get('username', 'unknown')
+        logger.info(f"Попытка входа пользователя: {username}")
+
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -135,6 +152,8 @@ class UserViewSet(viewsets.ModelViewSet):
         # Удаляем старый токен и создаем новый
         Token.objects.filter(user=user).delete()
         token = Token.objects.create(user=user)
+
+        logger.info(f"Пользователь {user.username} (ID: {user.id}) успешно вошел в систему. Токен: {token.key[:8]}...")
         
         return Response({
             'success': True,
@@ -152,15 +171,21 @@ class UserViewSet(viewsets.ModelViewSet):
         
         POST /api/users/logout/
         """
+        user = request.user
+        logger.info(f"Пользователь {user.username} (ID: {user.id}) выходит из системы")
+
         try:
             # Удаляем токен
             request.user.auth_token.delete()
             django_logout(request)
+
+            logger.info(f"Пользователь {user.username} (ID: {user.id}) успешно вышел из системы")
             
             return Response({
                 'message': 'Успешный выход из системы'
             }, status=status.HTTP_200_OK)
-        except (AttributeError, Token.DoesNotExist):
+        except (AttributeError, Token.DoesNotExist) as e:
+            logger.warning(f"Ошибка при выходе пользователя {user.username}: {str(e)}")
             return Response({
                 'message': 'Уже выполнен выход'
             }, status=status.HTTP_200_OK)
@@ -173,6 +198,7 @@ class UserViewSet(viewsets.ModelViewSet):
         GET /api/users/{id}/storage/
         """
         user = self.get_object()
+        logger.info(f"Запрос информации о хранилище пользователя {user.username} (ID: {user.id}) от {request.user.username}")
         
         # Получаем статистику по файлам
         from file_storage.models import File, Folder
@@ -183,6 +209,8 @@ class UserViewSet(viewsets.ModelViewSet):
         total_size = files.aggregate(Sum('size'))['size__sum'] or 0
         files_count = files.count()
         folders_count = folders.count()
+
+        logger.debug(f"Статистика хранилища для {user.username}: файлов={files_count}, папок={folders_count}, размер={total_size} байт")
         
         # Статистика по типам файлов
         files_by_type = files.values('content_type').annotate(
@@ -225,9 +253,10 @@ class UserViewSet(viewsets.ModelViewSet):
         POST /api/users/{id}/toggle_active/
         """
         user = self.get_object()
-        
+        admin = request.user
         # Нельзя заблокировать самого себя
         if user == request.user:
+            logger.warning(f"Пользователь {admin.username} попытался заблокировать самого себя")
             return Response({
                 'error': 'Нельзя заблокировать самого себя'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -238,8 +267,12 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Если блокируем - удаляем все токены пользователя
         if not user.is_active:
+            token_count = Token.objects.filter(user=user).count()
             Token.objects.filter(user=user).delete()
-        
+            logger.info(f"Админ {admin.username} заблокировал пользователя {user.username} (ID: {user.id}). Удалено токенов: {token_count}")
+        else:
+            logger.info(f"Админ {admin.username} разблокировал пользователя {user.username} (ID: {user.id})")
+
         return Response({
             'id': user.id,
             'username': user.username,
@@ -255,10 +288,13 @@ class UserViewSet(viewsets.ModelViewSet):
         GET /api/users/stats/
         """
         if not request.user.is_staff:
+            logger.warning(f"Пользователь {request.user.username} попытался получить статистику без прав администратора")
             return Response({
                 'error': 'Только для администраторов'
             }, status=status.HTTP_403_FORBIDDEN)
         
+        logger.info(f"Админ {request.user.username} запросил статистику пользователей")
+
         total_users = User.objects.count()
         active_users = User.objects.filter(is_active=True).count()
         staff_users = User.objects.filter(is_staff=True).count()
@@ -270,6 +306,8 @@ class UserViewSet(viewsets.ModelViewSet):
         last_month = timezone.now() - timedelta(days=30)
         new_users = User.objects.filter(date_joined__gte=last_month).count()
         
+        logger.debug(f"Статистика: всего={total_users}, активных={active_users}, сотрудников={staff_users}, новых={new_users}")
+
         return Response({
             'total_users': total_users,
             'active_users': active_users,
@@ -286,16 +324,20 @@ class UserViewSet(viewsets.ModelViewSet):
         
         POST /api/users/{id}/make_admin/
         """
+        admin = request.user
         user = self.get_object()
         
         # Нельзя сделать админом самого себя?
         if user == request.user:
+            logger.warning(f"Пользователь {admin.username} попытался назначить себя администратором через make_admin")
             return Response({
                 'error': 'Нельзя изменить свои права через этот эндпоинт'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         user.is_staff = True
         user.save()
+
+        logger.info(f"Админ {admin.username} назначил пользователя {user.username} (ID: {user.id}) администратором")
         
         return Response({
             'message': f'Пользователь {user.username} назначен администратором',
@@ -315,8 +357,10 @@ class UserViewSet(viewsets.ModelViewSet):
         POST /api/users/{id}/remove_admin/
         """
         user = self.get_object()
+        admin = request.user
         
         if user == request.user:
+            logger.warning(f"Пользователь {admin.username} попытался снять права администратора с самого себя")
             return Response({
                 'error': 'Нельзя снять права администратора с самого себя'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -324,6 +368,8 @@ class UserViewSet(viewsets.ModelViewSet):
         user.is_staff = False
         user.save()
         
+        logger.info(f"Админ {admin.username} снял права администратора с пользователя {user.username} (ID: {user.id})")
+
         return Response({
             'message': f'Права администратора сняты с пользователя {user.username}',
             'user': {
@@ -341,8 +387,10 @@ class UserViewSet(viewsets.ModelViewSet):
         POST /api/users/{id}/make_superuser/
         """
         user = self.get_object()
+        admin = request.user
         
         if user == request.user:
+            logger.warning(f"Пользователь {admin.username} попытался назначить себя суперпользователем")
             return Response({
                 'error': 'Нельзя изменить свои права через этот эндпоинт'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -350,6 +398,8 @@ class UserViewSet(viewsets.ModelViewSet):
         user.is_staff = True
         user.is_superuser = True
         user.save()
+
+        logger.info(f"Админ {admin.username} назначил пользователя {user.username} (ID: {user.id}) суперпользователем")
         
         return Response({
             'message': f'Пользователь {user.username} назначен суперпользователем',
@@ -365,6 +415,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def check_permissions(self, request):
         """Проверить свои права"""
         user = request.user
+        logger.debug(f"Пользователь {user.username} проверил свои права")
         
         return Response({
             'user_id': user.id,
@@ -407,19 +458,25 @@ class UserViewSet(viewsets.ModelViewSet):
         user = serializer.save()
         
         # Создаем токен автоматически
-        Token.objects.get_or_create(user=user)
+        token, created = Token.objects.get_or_create(user=user)
+        logger.info(f"Создан новый пользователь: {user.username} (ID: {user.id}). Токен {'создан' if created else 'уже существовал'}")
     
     def perform_destroy(self, instance):
         """Удаление пользователя (с очисткой)"""
-        # Здесь можно добавить дополнительную логику
-        # Например, удалить все файлы пользователя
+        logger.warning(f"Удаление пользователя {instance.username} (ID: {instance.id}) администратором {self.request.user.username}")
+
         instance.delete()
+        logger.info(f"Пользователь {instance.username} (ID: {instance.id}) успешно удален")
     
     def create(self, request, *args, **kwargs):
         """
         Переопределяем create для возврата токена при регистрации.
         POST /api/users/ - регистрация нового пользователя
         """
+        username = request.data.get('username', 'unknown')
+        email = request.data.get('email', 'unknown')
+        logger.info(f"Попытка регистрации нового пользователя: {username} (email: {email})")
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -434,6 +491,7 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Сериализуем пользователя
         user_data = UserDetailSerializer(user, context={'request': request}).data
+        logger.info(f"Пользователь {user.username} (ID: {user.id}) успешно зарегистрирован")
         
         # Добавляем токен к ответу
         response_data = {

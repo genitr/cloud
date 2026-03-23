@@ -1,6 +1,7 @@
 import React from 'react';
 import S from './Toolbar.module.css';
 import Breadcrumbs from '../Breadcrumbs/Breadcrumbs';
+import Icon from '../ui/Icon/Icon';
 
 interface ToolbarProps {
     onUpload: () => void;
@@ -28,7 +29,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                         onClick={onNavigateUp}
                         title="На уровень вверх"
                     >
-                        ⬆️ Наверх
+                        <Icon name='arrow' size={18} /> Наверх
                     </button>
                 )}
                 {/* Хлебные крошки */}
@@ -40,10 +41,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
             <div className={S.rightButtons}>
                 <button className={S.primaryButton} onClick={onUpload}>
-                    ⬆️ Загрузить файл
+                    <Icon name='uploadFile' size={18} /> Загрузить файл
                 </button>
                 <button className={S.secondaryButton} onClick={onCreateFolder}>
-                    📁 Создать папку
+                    <Icon name='folder' size={18} /> Создать папку
                 </button>
             </div>
         </div>

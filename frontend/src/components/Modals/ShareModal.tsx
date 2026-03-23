@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from './Modals.module.css';
 import type { ShareModalProps } from '../../types';
+import Icon from '../ui/Icon/Icon';
 
 const ShareModal: React.FC<ShareModalProps> = ({ 
   isOpen, 
@@ -41,7 +42,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
         
         <div className={styles.modalContent}>
           <div className={styles.fileInfo}>
-            <div className={styles.fileIcon}>📄</div>
+            <div className={styles.fileIcon}><Icon name='file' size={24} /></div>
             <div className={styles.fileDetails}>
               <div className={styles.fileName}>{itemName}</div>
             </div>
@@ -50,7 +51,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           {/* Ссылка для скачивания */}
           <div className={styles.linkSection}>
             <div className={styles.linkLabel}>
-              <span className={styles.linkIcon}>⬇️</span>
+              <span className={styles.linkIcon}><Icon name='download' size={16} /></span>
               Ссылка для скачивания:
             </div>
             <div className={styles.linkBox}>
@@ -66,14 +67,14 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 onClick={() => handleCopyLink(shareUrl || '', 'download')}
                 title="Копировать ссылку"
               >
-                {copied === 'download' ? '✓' : '📋'}
+                {copied === 'download' ? '✓' : <Icon name='clipboard' size={20} />}
               </button>
               <button 
                 className={styles.testButton}
                 onClick={() => handleTestLink(shareUrl || '')}
                 title="Открыть в новой вкладке"
               >
-                🔗
+                <Icon name='link' size={16} />
               </button>
             </div>
             <div className={styles.linkHint}>
@@ -85,7 +86,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           {viewUrl && (
             <div className={styles.linkSection}>
               <div className={styles.linkLabel}>
-                <span className={styles.linkIcon}>👁️</span>
+                <span className={styles.linkIcon}><Icon name='eye' size={18} /></span>
                 Ссылка для просмотра:
               </div>
               <div className={styles.linkBox}>
@@ -101,14 +102,14 @@ const ShareModal: React.FC<ShareModalProps> = ({
                   onClick={() => handleCopyLink(viewUrl, 'view')}
                   title="Копировать ссылку"
                 >
-                  {copied === 'view' ? '✓' : '📋'}
+                  {copied === 'view' ? '✓' : <Icon name='clipboard' size={20} />}
                 </button>
                 <button 
                   className={styles.testButton}
                   onClick={() => handleTestLink(viewUrl)}
                   title="Открыть в новой вкладке"
                 >
-                  🔗
+                  <Icon name='link' size={16} />
                 </button>
               </div>
               <div className={styles.linkHint}>

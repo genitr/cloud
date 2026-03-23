@@ -1,6 +1,6 @@
 .item {
   display: grid;
-  grid-template-columns: auto 3fr 1fr 1fr 1fr;
+  grid-template-columns: auto 3fr 1fr 1fr 1fr 1fr 1fr;
   align-items: center;
   padding: 10px 15px;
   color: #5b5c5d;
@@ -58,5 +58,5 @@
 }
 
 .actionButton:hover {
-  background: #e9ecef;
+  background: #7a7b7c;
 }

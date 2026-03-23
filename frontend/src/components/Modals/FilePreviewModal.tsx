@@ -1,9 +1,8 @@
-// components/Modals/FilePreviewModal.tsx
 import React, { useState, useEffect } from 'react';
-import styles from './Modals.module.css';
+import S from './Modals.module.css';
 import { API_URL } from '../../types';
 import type { FileListItem, FileItem } from '../../types';
-import { formatFileSize } from '../../utils/formatNumber';
+import { formatFileSize, formatDate } from '../../utils/formatNumber';
 import { useAppDispatch } from '../../store/hooks';
 import { downloadFile } from '../../store/slices/filesSlice';
 
@@ -26,8 +25,31 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [viewRecorded, setViewRecorded] = useState(false);
 
   const dispatch = useAppDispatch();
+  
+  useEffect(() => {
+    if (file && isOpen && !viewRecorded) {
+      // Увеличиваем счетчик просмотров при открытии модалки
+      const recordView = async () => {
+        try {
+          const token = localStorage.getItem('auth_token');
+          await fetch(`${API_URL}/files/${file.id}/view/`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Token ${token}`,
+            }
+          });
+          setViewRecorded(true);
+        } catch (err) {
+          console.error('Error recording view:', err);
+        }
+      };
+      
+      recordView();
+    }
+  }, [file, isOpen, viewRecorded]);
   
   useEffect(() => {
     if (file && isOpen) {
@@ -45,7 +67,6 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           });
           if (response.ok) {
             const data = await response.json();
-            console.log('File details loaded:', data);
             setFileData(data);
             
             // Для изображений, видео, аудио и PDF загружаем файл через fetch
@@ -80,6 +101,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
       if (audioUrl) URL.revokeObjectURL(audioUrl);
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file, isOpen]);
 
   const loadFileContent = async (fileId: number, type: string) => {
@@ -132,58 +154,41 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     }
   };
 
-  const formatDate = (dateString: string): string => {
-    if (!dateString) return 'Неизвестно';
-    try {
-      return new Date(dateString).toLocaleString('ru-RU', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
   if (!isOpen || !file) return null;
 
   const fileType = fileData ? getFileType(fileData.content_type) : 'other';
   const downloadUrl = getDownloadUrl(file.id);
   const displayName = fileData?.name || file.name;
 
-  console.log('File preview:', { fileType, displayName, fileData });
-
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={`${styles.modal} ${styles.previewModal}`} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3 className={styles.fileName}>{displayName}</h3>
-          <button className={styles.closeButton} onClick={onClose}>✕</button>
+    <div className={S.modalOverlay} onClick={onClose}>
+      <div className={`${S.modal} ${S.previewModal}`} onClick={(e) => e.stopPropagation()}>
+        <div className={S.modalHeader}>
+          <h3 className={S.fileName}>{displayName}</h3>
+          <button className={S.closeButton} onClick={onClose}>✕</button>
         </div>
 
-        <div className={styles.modalContent}>
+        <div className={S.modalContent}>
           {loading ? (
-            <div className={styles.loaderContainer}>
-              <div className={styles.spinner}></div>
+            <div className={S.loaderContainer}>
+              <div className={S.spinner}></div>
               <p>Загрузка...</p>
             </div>
           ) : error ? (
-            <div className={styles.errorContainer}>
-              <div className={styles.errorIcon}>⚠️</div>
+            <div className={S.errorContainer}>
+              <div className={S.errorIcon}>⚠️</div>
               <p>{error}</p>
             </div>
           ) : (
             <>
               {/* Preview */}
-              <div className={styles.previewContainer}>
+              <div className={S.previewContainer}>
                 {fileType === 'image' && imageUrl && (
                   <img
                     src={imageUrl}
                     alt={displayName}
-                    className={styles.previewImage}
-                    onLoad={() => console.log('Image loaded successfully')}
+                    className={S.previewImage}
+                    onLoad={() => null}
                     onError={() => console.error('Image failed to load')}
                   />
                 )}
@@ -191,7 +196,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                 {fileType === 'video' && videoUrl && (
                   <video
                     controls
-                    className={styles.previewVideo}
+                    className={S.previewVideo}
                     src={videoUrl}
                   >
                     Ваш браузер не поддерживает видео
@@ -199,27 +204,27 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                 )}
                 
                 {fileType === 'audio' && audioUrl && (
-                  <div className={styles.audioPreview}>
-                    <div className={styles.audioIcon}>🎵</div>
-                    <audio controls className={styles.previewAudio} src={audioUrl} />
+                  <div className={S.audioPreview}>
+                    <div className={S.audioIcon}>🎵</div>
+                    <audio controls className={S.previewAudio} src={audioUrl} />
                   </div>
                 )}
                 
                 {fileType === 'pdf' && pdfUrl && (
                   <iframe
                     src={pdfUrl}
-                    className={styles.previewPdf}
+                    className={S.previewPdf}
                     title={displayName}
                   />
                 )}
                 
                 {fileType === 'text' && (
-                  <div className={styles.textPreview}>
-                    <div className={styles.textIcon}>📝</div>
+                  <div className={S.textPreview}>
+                    <div className={S.textIcon}>📝</div>
                     <a
                       href={downloadUrl}
                       download={displayName}
-                      className={styles.downloadLink}
+                      className={S.downloadLink}
                     >
                       Скачать для просмотра
                     </a>
@@ -227,12 +232,12 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                 )}
                 
                 {fileType === 'other' && (
-                  <div className={styles.otherPreview}>
-                    <div className={styles.fileIconLarge}>📄</div>
+                  <div className={S.otherPreview}>
+                    <div className={S.fileIconLarge}>📄</div>
                     <a
                       href={downloadUrl}
                       download={displayName}
-                      className={styles.downloadLink}
+                      className={S.downloadLink}
                     >
                       Скачать файл
                     </a>
@@ -241,8 +246,8 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                 
                 {/* Если контент не загружен */}
                 {fileType === 'image' && !imageUrl && !error && (
-                  <div className={styles.loaderContainer}>
-                    <div className={styles.spinner}></div>
+                  <div className={S.loaderContainer}>
+                    <div className={S.spinner}></div>
                     <p>Загрузка изображения...</p>
                   </div>
                 )}
@@ -250,30 +255,30 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
               {/* File Info */}
               {fileData && (
-                <div className={styles.fileInfo}>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Размер:</span>
-                    <span className={styles.infoValue}>{formatFileSize(fileData.size)}</span>
+                <div className={S.fileInfo}>
+                  <div className={S.infoRow}>
+                    <span className={S.infoLabel}>Размер:</span>
+                    <span className={S.infoValue}>{formatFileSize(fileData.size)}</span>
                   </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Тип:</span>
-                    <span className={styles.infoValue}>{fileData.content_type}</span>
+                  <div className={S.infoRow}>
+                    <span className={S.infoLabel}>Тип:</span>
+                    <span className={S.infoValue}>{fileData.content_type}</span>
                   </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Загружен:</span>
-                    <span className={styles.infoValue}>{formatDate(fileData.uploaded_at)}</span>
+                  <div className={S.infoRow}>
+                    <span className={S.infoLabel}>Загружен:</span>
+                    <span className={S.infoValue}>{formatDate(fileData.uploaded_at, true)}</span>
                   </div>
                   {fileData.comment && (
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>💬 Комментарий:</span>
-                      <span className={styles.infoValue}>{fileData.comment}</span>
+                    <div className={S.infoRow}>
+                      <span className={S.infoLabel}>💬 Комментарий:</span>
+                      <span className={S.infoValue}>{fileData.comment}</span>
                     </div>
                   )}
                   
                   {fileData.last_downloaded_at && (
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>📅 Последнее скачивание:</span>
-                      <span className={styles.infoValue}>
+                    <div className={S.infoRow}>
+                      <span className={S.infoLabel}>📅 Последнее скачивание:</span>
+                      <span className={S.infoValue}>
                         {new Date(fileData.last_downloaded_at).toLocaleString('ru-RU')}
                       </span>
                     </div>
@@ -284,14 +289,14 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           )}
         </div>
 
-        <div className={styles.modalFooter}>
+        <div className={S.modalFooter}>
           <button 
-            className={styles.downloadButton} 
+            className={S.downloadButton} 
             onClick={() => handleFileDownload(file)}
             title="Скачать">
             Скачать
           </button>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button className={S.closeButton} onClick={onClose}>
             Закрыть
           </button>
         </div>

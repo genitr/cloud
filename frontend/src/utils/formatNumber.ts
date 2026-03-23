@@ -24,11 +24,32 @@ export const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('ru-RU').format(num);
 };
 
-export const formatDate = (dateString: string | undefined) => {
+export const formatDate = (dateString: string, withTime = false) => {
   if (!dateString) return 'Неизвестно';
   try {
-    return dateString.split('T')[0];
-  } catch (e) {
-    return 'Неизвестно: ' + e;
+    if(withTime) {
+      return new Date(dateString).toLocaleString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } 
+
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    
+  } catch {
+    return dateString;
   }
+};
+
+export const getFileWord = (count: number): string => {
+  if (count % 10 === 1 && count % 100 !== 11) return 'файл';
+  if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'файла';
+  return 'файлов';
 };

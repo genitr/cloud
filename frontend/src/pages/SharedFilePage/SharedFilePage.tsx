@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import S from './SharedFilePage.module.css';
 import { API_URL } from '../../types';
+import { formatDate, formatFileSize } from '../../utils/formatNumber';
 
 interface FileInfo {
   name: string;
@@ -31,7 +32,7 @@ const SharedFilePage = () => {
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/public/${token}/`);
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error('Файл не найден или ссылка недействительна');
@@ -42,6 +43,7 @@ const SharedFilePage = () => {
         const data = await response.json();
         setShareData(data);
       } catch (err) {
+        console.error('Error fetching share info:', err);
         setError(err instanceof Error ? err.message : 'Произошла ошибка');
       } finally {
         setLoading(false);
@@ -56,50 +58,34 @@ const SharedFilePage = () => {
   const handleDownload = async () => {
     try {
       setDownloading(true);
-      const downloadUrl = `${API_URL}/public/${token}/download/`;
+      const response = await fetch(`${API_URL}/public/${token}/download/`);
       
-      // Создаем временную ссылку для скачивания
+      if (!response.ok) {
+        throw new Error('Ошибка скачивания');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = downloadUrl;
+      link.href = url;
       link.download = shareData?.file_info.original_name || 'file';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
-      // Обновляем информацию о файле (для обновления счетчика скачиваний)
-      setTimeout(() => {
-        const refreshInfo = async () => {
-          const response = await fetch(`${API_URL}/public/${token}/`);
-          const data = await response.json();
-          setShareData(data);
-        };
-        refreshInfo();
-      }, 1000);
+      // Обновляем информацию о файле после скачивания
+      const infoResponse = await fetch(`${API_URL}/share/${token}/`);
+      if (infoResponse.ok) {
+        const updatedData = await infoResponse.json();
+        setShareData(updatedData);
+      }
       
     } catch (err) {
       console.error('Download error:', err);
-      alert('Ошибка при скачивании файла');
     } finally {
       setDownloading(false);
     }
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Б';
-    const k = 1024;
-    const sizes = ['Б', 'КБ', 'МБ', 'ГБ', 'ТБ'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-  };
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const getFileIcon = (contentType: string): string => {
@@ -142,8 +128,8 @@ const SharedFilePage = () => {
 
   const { file_info, created_by_username, created_at } = shareData;
   const fileSize = formatFileSize(file_info.size);
-  const uploadDate = formatDate(file_info.uploaded_at);
-  const shareDate = formatDate(created_at);
+  const uploadDate = formatDate(file_info.uploaded_at, true);
+  const shareDate = formatDate(created_at, true);
   const fileIcon = getFileIcon(file_info.content_type);
 
   return (
@@ -232,9 +218,6 @@ const SharedFilePage = () => {
 
         {/* Футер */}
         <div className={S.footer}>
-          <Link to="/" className={S.homeLink}>
-            ← На главную
-          </Link>
           <p className={S.disclaimer}>
             Файл доступен по ссылке. Не передавайте её посторонним.
           </p>

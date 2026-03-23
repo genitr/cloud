@@ -403,5 +403,8 @@ class PublicFileShareSerializer(serializers.ModelSerializer):
             'size': obj.file.size,
             'content_type': obj.file.content_type,
             'comment': obj.file.comment,
-            'uploaded_at': obj.file.uploaded_at
+            'uploaded_at': obj.file.uploaded_at,
+            'downloads_count': obj.file.downloads_count,
+            'views_count': obj.file.views_count,
+            'last_downloaded_at': obj.file.last_downloaded_at,
         }

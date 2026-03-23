@@ -55,7 +55,7 @@ const Header = () => {
           {user.first_name || user.username}
         </span>
         <Icon 
-          name="chevron-down" 
+          name="arrowUp" 
           className={`${S.chevron} ${isProfileMenuOpen ? S.rotated : ''}`}
           size={16}
         />
@@ -68,12 +68,12 @@ const Header = () => {
     { 
       path: '/login', 
       label: 'Войти', 
-      icon: <Icon name='home' className={S.navLinkIcon} /> 
+      icon: <Icon name='login' className={S.navLinkIcon} /> 
     },
     { 
       path: '/registration', 
       label: 'Зарегистрироваться', 
-      icon: <Icon name='home' className={S.navLinkIcon} /> 
+      icon: <Icon name='register' className={S.navLinkIcon} /> 
     },
   ];
 
@@ -81,7 +81,7 @@ const Header = () => {
     <header className={S.header}>
       <div className={S.container}>
         <Link to="/" className={S.logo}>
-          <Icon name='home' className={S.logoIcon} size={36} />
+          <Icon name='logo' className={S.logoIcon} size={36} />
           <span className="text-gradient">Диск</span>
         </Link>
 
@@ -123,22 +123,13 @@ const Header = () => {
                       
                       <div className={S.dropdownDivider} />
                       
-                      <Link 
-                        to="/profile" 
-                        className={S.dropdownItem}
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
-                        <Icon name='home' size={18} />
-                        <span>Мой профиль</span>
-                      </Link>
-                      
                       {user.is_staff && (
                         <Link 
                           to="/admin" 
                           className={S.dropdownItem}
                           onClick={() => setIsProfileMenuOpen(false)}
                         >
-                          <Icon name='home' size={18} />
+                          <Icon name='admin' size={18} />
                           <span>Админ панель</span>
                         </Link>
                       )}
@@ -148,7 +139,7 @@ const Header = () => {
                         className={S.dropdownItem}
                         onClick={() => setIsProfileMenuOpen(false)}
                       >
-                        <Icon name='home' size={18} />
+                        <Icon name='user' size={18} />
                         <span>Мой диск</span>
                       </Link>
                       
@@ -158,7 +149,7 @@ const Header = () => {
                         className={S.dropdownItem}
                         onClick={handleLogout}
                       >
-                        <Icon name='home' size={18} />
+                        <Icon name='logout' size={18} />
                         <span>Выйти</span>
                       </button>
                     </div>

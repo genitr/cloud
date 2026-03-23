@@ -57,8 +57,6 @@ export const createShare = createAsyncThunk<
     try {
       const state = getState();
       const token = state.auth.token;
-
-      console.log('Creating share for file:', fileId);
       
       const response = await fetch(`${API_URL}/files/${fileId}/share/`, {
         method: 'POST',
@@ -97,7 +95,6 @@ export const fetchPublicShare = createAsyncThunk<
   'sharing/fetchPublic',
   async (token, { rejectWithValue }) => {
     try {
-      console.log('Fetching public share for token:', token);
       const response = await fetch(`${API_URL}/public/${token}/`);
 
       if (!response.ok) {
@@ -121,7 +118,6 @@ export const downloadPublicFile = createAsyncThunk<
   'sharing/downloadPublic',
   async (token, { rejectWithValue }) => {
     try {
-      console.log('Downloading public file with token:', token);
       const response = await fetch(`${API_URL}/public/${token}/download/`);
 
       if (!response.ok) {

@@ -1,7 +1,7 @@
-// components/Modals/RenameFileModal.tsx
 import React, { useState, useEffect } from 'react';
 import styles from './Modals.module.css';
 import type { FileListItem } from '../../types';
+import Icon from '../ui/Icon/Icon';
 
 interface RenameFileModalProps {
   isOpen: boolean;
@@ -90,7 +90,7 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({
         
         <div className={styles.modalContent}>
           <div className={styles.fileInfo}>
-            <div className={styles.fileIcon}>📄</div>
+            <div className={styles.fileIcon}><Icon name='file' size={24} /></div>
             <div className={styles.fileDetails}>
               <div className={styles.fileName}>{file.name}</div>
             </div>
@@ -98,7 +98,7 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({
           
           <div className={styles.inputGroup}>
             <label className={styles.label}>
-              <span className={styles.labelIcon}>✏️</span>
+              <span className={styles.labelIcon}><Icon name='pencil' size={16} /></span>
               Имя файла
             </label>
             <div className={styles.nameInputWrapper}>
@@ -121,7 +121,7 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({
           
           <div className={styles.inputGroup}>
             <label className={styles.label}>
-              <span className={styles.labelIcon}>💬</span>
+              <span className={styles.labelIcon}><Icon name='comment' size={16} /></span>
               Комментарий
             </label>
             <textarea

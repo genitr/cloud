@@ -1,0 +1,5 @@
+import type { SVGProps } from 'react';
+
+export function Clipboard(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><g fill="none" strokeWidth={1.5}><path fill="#d7e0ff" d="M3.5 22h17V3h-17z"></path><path fill="#fff" d="M8 2h8v4H8z"></path><path stroke="#4147d5" d="M8 3H3.5v19h17V3H16"></path><path stroke="#4147d5" d="M8 2h8v4H8z"></path></g></svg>);
+}

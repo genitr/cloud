@@ -872,6 +872,7 @@
 
 .infoRow {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   align-items: baseline;
   padding: 8px 0;

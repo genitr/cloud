@@ -23,9 +23,7 @@ class AuthService {
       });
 
       // Логируем ответ
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (!response.ok) {
         // Обработка ошибок с бэкенда
@@ -46,7 +44,6 @@ class AuthService {
       
       if (token) {
         this.saveToken(token);
-        console.log('Token saved:', token);
       } else {
         console.warn('No token in response:', data);
       }

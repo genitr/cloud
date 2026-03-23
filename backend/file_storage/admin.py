@@ -26,6 +26,8 @@ class FileAdmin(admin.ModelAdmin):
         'owner', 
         'size', 
         'content_type',
+        'downloads_count',
+        'views_count',
         'comment',
         'updated_at'
     ]

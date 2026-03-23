@@ -127,8 +127,6 @@ export const uploadFile = createAsyncThunk<
         formData.append('comment', fileData.comment);
       }
 
-      console.log('Uploading file to folder:', fileData.folder);
-
       const response = await fetch(`${API_URL}/files/`, {
         method: 'POST',
         headers: getAuthHeaders(token, true),
@@ -141,7 +139,6 @@ export const uploadFile = createAsyncThunk<
       }
 
       const data: FileItem = await response.json();
-      console.log('Upload successful to folder:', data.folder);
       
       await dispatch(fetchFiles({ folder: fileData.folder || null }));
       
@@ -155,7 +152,7 @@ export const uploadFile = createAsyncThunk<
 
 // Скачать файл
 export const downloadFile = createAsyncThunk<
-  number,
+  { fileId: number; originalName: string },
   number,
   { state: RootState; rejectValue: string }
 >(
@@ -165,33 +162,39 @@ export const downloadFile = createAsyncThunk<
       const state = getState();
       const token = state.auth.token;
 
-      const response = await fetch(`${API_URL}/files/${fileId}/download/`, {
+      // Сначала получаем информацию о файле
+      const infoResponse = await fetch(`${API_URL}/files/${fileId}/`, {
+        headers: getAuthHeaders(token),
+      });
+      
+      if (!infoResponse.ok) {
+        throw new Error('Ошибка получения информации о файле');
+      }
+      
+      const fileInfo = await infoResponse.json();
+      const originalName = fileInfo.original_name || fileInfo.name;
+
+      // Затем скачиваем файл
+      const downloadResponse = await fetch(`${API_URL}/files/${fileId}/download/`, {
         headers: getAuthHeaders(token),
       });
 
-      if (!response.ok) {
+      if (!downloadResponse.ok) {
         throw new Error('Ошибка скачивания файла');
       }
 
-      const blob = await response.blob();
+      const blob = await downloadResponse.blob();
       
-      const contentDisposition = response.headers.get('content-disposition');
-      let filename = 'file';
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?(.+)"?/);
-        if (match) filename = match[1];
-      }
-
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = filename;
+      link.download = originalName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      return fileId;
+      return { fileId, originalName };
     } catch (error) {
       return rejectWithValue('Ошибка при скачивании файла: ' + error);
     }

@@ -1,6 +1,8 @@
 import React from 'react';
 import S from './StorageFile.module.css';
 import type { FileListItem } from '../../../types';
+import { formatDate } from '../../../utils/formatNumber';
+import Icon from '../Icon/Icon';
 
 interface FileItemProps {
   file: FileListItem;
@@ -30,36 +32,14 @@ const StorageFile: React.FC<FileItemProps> = ({
   } = file;
   
   const getFileIcon = () => {
-    if (!content_type) return '📄';
-    if (content_type.startsWith('image/')) return '🖼️';
-    if (content_type.startsWith('video/')) return '🎬';
-    if (content_type.startsWith('audio/')) return '🎵';
-    if (content_type.includes('pdf')) return '📕';
-    if (content_type.includes('text')) return '📝';
-    if (content_type.includes('zip') || content_type.includes('rar')) return '🗜️';
-    return '📄';
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString('ru-RU');
-    } catch {
-      return dateString;
-    }
-  };
-
-  const formatDateTime = (dateString: string | null | undefined) => {
-    if (!dateString) return 'Никогда';
-    try {
-      return new Date(dateString).toLocaleString('ru-RU', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return 'Неизвестно';
-    }
+    if (!content_type) return <Icon name='file' />;
+    if (content_type.startsWith('image/')) return <Icon name='imageFile' />;
+    if (content_type.startsWith('video/')) return <Icon name='videoFile' />;
+    if (content_type.startsWith('audio/')) return <Icon name='audioFile' />;
+    if (content_type.includes('pdf')) return <Icon name='pdfFile' />;
+    if (content_type.includes('text') || content_type.includes('msword')) return <Icon name='textFile' />;
+    if (content_type.includes('zip') || content_type.includes('rar')) return <Icon name='zipFile' />;
+    return <Icon name='file' />;
   };
 
   const truncateComment = (text: string, maxLength: number = 50) => {
@@ -91,7 +71,7 @@ const StorageFile: React.FC<FileItemProps> = ({
       </div>
       <div className={S.itemMeta}>
         {last_downloaded_at && (
-          <div>{formatDateTime(last_downloaded_at)}</div>
+          <div>{formatDate(last_downloaded_at, true)}</div>
         )}
       </div>
       <div className={S.itemActions}>
@@ -100,27 +80,27 @@ const StorageFile: React.FC<FileItemProps> = ({
           onClick={() => onShare(file)}
           title="Поделиться"
         >
-          🔗
+          <Icon name='share' />
         </button>
         <button 
           className={S.actionButton}
           onClick={() => onRename?.(file)}
           title="Переименовать"
         >
-          ✏️
+          <Icon name='edit' />
         </button>
         <button 
           className={S.actionButton}
           onClick={() => onDelete(file)}
           title="Удалить"
         >
-          🗑️
+          <Icon name='delete' />
         </button>
         <button 
           className={S.actionButton} 
           onClick={() => onDownload(file)}
           title="Скачать">
-          ⬇️
+          <Icon name='download' />
         </button>
       </div>
     </div>

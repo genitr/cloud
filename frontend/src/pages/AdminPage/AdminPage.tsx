@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchUsers, fetchUserStats, toggleUserActive, makeAdmin, removeAdmin, deleteUser } from '../../store/slices/usersSlice';
 import { fetchFolders } from '../../store/slices/foldersSlice';
-import { fetchFiles } from '../../store/slices/filesSlice';
+import { fetchFiles, deleteFile } from '../../store/slices/filesSlice';
 import S from './AdminPage.module.css';
 import DeleteConfirmModal from '../../components/Modals/DeleteConfirmModal';
+import FilePreviewModal from '../../components/Modals/FilePreviewModal';
 import type { FileListItem, Folder } from '../../types';
+import { formatDate, formatFileSize } from '../../utils/formatNumber';
+import Icon from '../../components/ui/Icon/Icon';
 
 const AdminPage = () => {
   const dispatch = useAppDispatch();
@@ -13,8 +16,11 @@ const AdminPage = () => {
   const { user: currentUser } = useAppSelector(state => state.auth);
   
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FileListItem | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<FileListItem | null>(null);
   const [actionModal, setActionModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -103,9 +109,34 @@ const AdminPage = () => {
 
   const handleViewUserFiles = (userId: number) => {
     setSelectedUserId(userId);
-    // Загружаем данные для выбранного пользователя
     dispatch(fetchFolders());
     dispatch(fetchFiles({}));
+  };
+
+  const handleFilePreview = (file: FileListItem) => {
+    setSelectedFile(file);
+    setPreviewModalOpen(true);
+  };
+
+  const handleFileDelete = (file: FileListItem) => {
+    setFileToDelete(file);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmFileDelete = async () => {
+    if (!fileToDelete) return;
+    
+    try {
+      await dispatch(deleteFile(fileToDelete.id)).unwrap();
+      // Обновляем список файлов
+      dispatch(fetchFiles({}));
+      setFileToDelete(null);
+    } catch (error) {
+      console.error('Ошибка при удалении файла:', error);
+      alert('Не удалось удалить файл');
+    } finally {
+      setDeleteModalOpen(false);
+    }
   };
 
   if (isLoading) {
@@ -190,7 +221,7 @@ const AdminPage = () => {
                       disabled={user.id === currentUser?.id || user.is_superuser}
                       title={user.is_active ? 'Заблокировать' : 'Разблокировать'}
                     >
-                      {user.is_active ? '🔒' : '🔓'}
+                      {user.is_active ? <Icon name='lock' /> : <Icon name='unlock' />}
                     </button>
                     
                     {user.is_staff ? (
@@ -200,7 +231,7 @@ const AdminPage = () => {
                         disabled={user.id === currentUser?.id || user.is_superuser}
                         title="Снять права администратора"
                       >
-                        👑❌
+                        ❌
                       </button>
                     ) : (
                       <button
@@ -209,7 +240,7 @@ const AdminPage = () => {
                         disabled={user.is_superuser}
                         title="Назначить администратором"
                       >
-                        👑
+                        <Icon name='crown' />
                       </button>
                     )}
                     
@@ -218,16 +249,16 @@ const AdminPage = () => {
                       onClick={() => handleViewUserFiles(user.id)}
                       title="Просмотреть файлы"
                     >
-                      📁
+                      <Icon name='folder' />
                     </button>
                     
                     <button
-                      className={`${S.actionButton} ${S.deleteButton}`}
+                      className={S.actionButton}
                       onClick={() => handleDeleteUser(user.id, user.username)}
                       disabled={user.id === currentUser?.id || user.is_superuser}
                       title="Удалить пользователя"
                     >
-                      🗑️
+                      <Icon name='delete' />
                     </button>
                   </div>
                 </td>
@@ -242,12 +273,35 @@ const AdminPage = () => {
         <UserFilesModal
           userId={selectedUserId}
           onClose={() => setSelectedUserId(null)}
+          onFilePreview={handleFilePreview}
+          onFileDelete={handleFileDelete}
         />
       )}
 
+      {/* Модальное окно превью файла */}
+      <FilePreviewModal
+        isOpen={previewModalOpen}
+        onClose={() => {
+          setPreviewModalOpen(false);
+          setSelectedFile(null);
+        }}
+        file={selectedFile}
+      />
+
+      {/* Модальное окно подтверждения удаления файла */}
+      <DeleteConfirmModal
+        isOpen={deleteModalOpen && !!fileToDelete}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setFileToDelete(null);
+        }}
+        onConfirm={confirmFileDelete}
+        itemName={fileToDelete?.name}
+      />
+
       {/* Модальное окно подтверждения удаления */}
       <DeleteConfirmModal
-        isOpen={deleteModalOpen}
+        isOpen={deleteModalOpen && !!userToDelete}
         onClose={() => {
           setDeleteModalOpen(false);
           setUserToDelete(null);
@@ -306,10 +360,23 @@ const ConfirmActionModal = ({
 };
 
 // Модальное окно для просмотра файлов пользователя
-const UserFilesModal = ({ userId, onClose }: { userId: number; onClose: () => void }) => {
+const UserFilesModal = ({ 
+  userId, 
+  onClose, 
+  onFilePreview, 
+  onFileDelete 
+}: { 
+  userId: number; 
+  onClose: () => void;
+  onFilePreview: (file: FileListItem) => void;
+  onFileDelete: (file: FileListItem) => void;
+}) => {
   const { folders } = useAppSelector(state => state.folders);
   const { files } = useAppSelector(state => state.files);
   const { users } = useAppSelector(state => state.users);
+  const [selectedType, setSelectedType] = useState<'all' | 'files' | 'folders'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  
   
   const user = users.find(u => u.id === userId);
   
@@ -318,65 +385,169 @@ const UserFilesModal = ({ userId, onClose }: { userId: number; onClose: () => vo
   
   // Фильтруем файлы по владельцу
   const userFiles = files.filter((file: FileListItem) => {
-    return (file as FileListItem).owner === userId || 
-           (file as FileListItem).owner_info?.id === userId ||
-           (file as FileListItem & { owner?: number }).owner === userId;
+    return (file as FileListItem).owner === userId || (file as FileListItem).owner_info?.id === userId;
   });
+
+  // Фильтрация по поиску
+  const filteredFolders = userFolders.filter(folder =>
+    folder.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredFiles = userFiles.filter(file =>
+    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getFileIcon = (contentType: string) => {
+    if (!contentType) return <Icon name='file' />;
+    if (contentType.startsWith('image/')) return <Icon name='imageFile' />;
+    if (contentType.startsWith('video/')) return <Icon name='videoFile' />;
+    if (contentType.startsWith('audio/')) return <Icon name='audioFile' />;
+    if (contentType.includes('pdf')) return <Icon name='pdfFile' />;
+    if (contentType.includes('text') || contentType.includes('msword')) return <Icon name='textFile' />;
+    if (contentType.includes('zip') || contentType.includes('rar')) return <Icon name='zipFile' />;
+    return <Icon name='file' />;
+  };
+
+  const totalSize = userFiles.reduce((sum, file) => {
+    const sizeMatch = file.size_formatted.match(/^([\d.]+)\s*([БКМГТ]?)/);
+    if (sizeMatch) {
+      const value = parseFloat(sizeMatch[1]);
+      const unit = sizeMatch[2];
+      const multipliers: Record<string, number> = {
+        'Б': 1,
+        'К': 1024,
+        'М': 1024 * 1024,
+        'Г': 1024 * 1024 * 1024,
+      };
+      return sum + (value * (multipliers[unit] || 1));
+    }
+    return sum;
+  }, 0);
 
   return (
     <div className={S.modalOverlay} onClick={onClose}>
-      <div className={S.modal} onClick={e => e.stopPropagation()}>
+      <div className={`${S.modal} ${S.userFilesModal}`} onClick={e => e.stopPropagation()}>
         <div className={S.modalHeader}>
           <h3>Файлы пользователя {user?.username}</h3>
           <button className={S.closeButton} onClick={onClose}>✕</button>
         </div>
         
         <div className={S.modalContent}>
-          <div className={S.userStats}>
-            <div className={S.statItem}>
-              <span className={S.statLabel}>Папки:</span>
-              <span className={S.statValue}>{userFolders.length}</span>
+          {/* Статистика */}
+          <div className={S.statsSection}>
+            <div className={S.statCard}>
+              <span className={S.statIcon}><Icon name='folder' size={40} /></span>
+              <div>
+                <div className={S.statValue}>{userFolders.length}</div>
+                <div className={S.statLabel}>Папок</div>
+              </div>
             </div>
-            <div className={S.statItem}>
-              <span className={S.statLabel}>Файлы:</span>
-              <span className={S.statValue}>{userFiles.length}</span>
+            <div className={S.statCard}>
+              <span className={S.statIcon}><Icon name='file' size={40} /></span>
+              <div>
+                <div className={S.statValue}>{userFiles.length}</div>
+                <div className={S.statLabel}>Файлов</div>
+              </div>
+            </div>
+            <div className={S.statCard}>
+              <span className={S.statIcon}><Icon name='database' size={40} /></span>
+              <div>
+                <div className={S.statValue}>{formatFileSize(totalSize)}</div>
+                <div className={S.statLabel}>Общий размер</div>
+              </div>
             </div>
           </div>
-          
-          <h4>Папки</h4>
-          <div className={S.fileList}>
-            {userFolders.length === 0 ? (
-              <p className={S.emptyMessage}>Нет папок</p>
-            ) : (
-              userFolders.map(folder => (
-                <div key={folder.id} className={S.fileItem}>
-                  <span className={S.fileIcon}>📁</span>
-                  <span className={S.fileName}>{folder.name}</span>
-                  <span className={S.filePath}>{folder.full_path}</span>
-                </div>
-              ))
-            )}
+
+          {/* Поиск и фильтры */}
+          <div className={S.filtersSection}>
+            <input
+              type="text"
+              className={S.searchInput}
+              placeholder="Поиск по имени..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className={S.typeFilters}>
+              <button
+                className={`${S.filterButton} ${selectedType === 'all' ? S.active : ''}`}
+                onClick={() => setSelectedType('all')}
+              >
+                Все ({userFolders.length + userFiles.length})
+              </button>
+              <button
+                className={`${S.filterButton} ${selectedType === 'folders' ? S.active : ''}`}
+                onClick={() => setSelectedType('folders')}
+              >
+                Папки ({userFolders.length})
+              </button>
+              <button
+                className={`${S.filterButton} ${selectedType === 'files' ? S.active : ''}`}
+                onClick={() => setSelectedType('files')}
+              >
+                Файлы ({userFiles.length})
+              </button>
+            </div>
           </div>
-          
-          <h4>Файлы</h4>
-          <div className={S.fileList}>
-            {userFiles.length === 0 ? (
-              <p className={S.emptyMessage}>Нет файлов</p>
-            ) : (
-              userFiles.map(file => (
-                <div key={file.id} className={S.fileItem}>
-                  <span className={S.fileIcon}>📄</span>
-                  <span className={S.fileName}>{file.name}</span>
-                  <span className={S.fileSize}>{file.size_formatted}</span>
-                  <span className={S.fileType}>{file.content_type}</span>
+
+          {/* Список файлов и папок */}
+          <div className={S.itemsList}>
+            {(selectedType === 'all' || selectedType === 'folders') && filteredFolders.map(folder => (
+              <div key={folder.id} className={S.itemCard}>
+                <div className={S.itemIcon}><Icon name='folder' size={40} /></div>
+                <div className={S.itemInfo}>
+                  <div className={S.itemName}>{folder.name}</div>
+                  <div className={S.itemPath}>{folder.full_path}</div>
+                  <div className={S.itemMeta}>
+                    {folder.subfolders_count} подпапок • {folder.files_count} файлов
+                  </div>
                 </div>
-              ))
+              </div>
+            ))}
+
+            {(selectedType === 'all' || selectedType === 'files') && filteredFiles.map(file => (
+              <div key={file.id} className={S.itemCard}>
+                <div className={S.itemIcon}>{getFileIcon(file.content_type)}</div>
+                <div className={S.itemInfo}>
+                  <div className={S.itemName}>{file.name}</div>
+                  <div className={S.itemMeta}>
+                    {file.size_formatted} • {formatDate(file.uploaded_at, true)}
+                  </div>
+                  {file.comment && (
+                    <div className={S.itemComment}><Icon name='comment' size={40} /> {file.comment}</div>
+                  )}
+                </div>
+                <div className={S.itemActions}>
+                  <button
+                    className={S.actionButton}
+                    onClick={() => onFilePreview(file)}
+                    title="Просмотр"
+                  >
+                    <Icon name='eye' />
+                  </button>
+                  <button
+                    className={S.actionButton}
+                    onClick={() => onFileDelete(file)}
+                    title="Удалить"
+                  >
+                    <Icon name='delete' />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+              <div className={S.emptyState}>
+                <span className={S.emptyIcon}><Icon name='folder' size={40} /></span>
+                <p>Ничего не найдено</p>
+              </div>
             )}
           </div>
         </div>
         
         <div className={S.modalFooter}>
-          <button className={S.closeButton} onClick={onClose}>Закрыть</button>
+          <button className={S.closeButton} onClick={onClose}>
+            Закрыть
+          </button>
         </div>
       </div>
     </div>
