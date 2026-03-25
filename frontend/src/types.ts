@@ -113,7 +113,7 @@ export interface InputProps {
 }
 
 // ==================== API ====================
-export const API_URL = '/api/';
+export const API_URL = '/api';
 
 // ==================== АУТЕНТИФИКАЦИЯ ====================
 export interface LoginCredentials {

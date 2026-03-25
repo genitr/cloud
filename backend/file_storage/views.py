@@ -83,10 +83,15 @@ class FileViewSet(viewsets.ModelViewSet):
         """
         Возвращает файлы только текущего пользователя.
         """
+        user = self.request.user
+
         # Проверяем аутентификацию
         if not self.request.user.is_authenticated:
             logger.debug("Анонимный запрос к файлам, возвращаем пустой результат")
             return File.objects.none()
+        
+        if user.is_staff or user.is_superuser:
+            return File.objects.all().order_by('-uploaded_at')
         
         # Получаем базовый queryset
         queryset = File.objects.filter(owner=self.request.user)
