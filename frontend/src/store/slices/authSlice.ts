@@ -9,6 +9,7 @@ import type {
   RootState
 } from '../../types';
 import { API_URL } from '../../types';
+import { getCSRFToken } from '../../utils/csrf';
 
 const initialState: AuthState = {
   user: null,
@@ -30,6 +31,7 @@ export const register = createAsyncThunk<
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken(),
         },
         body: JSON.stringify({
           username: userData.login,
@@ -39,6 +41,7 @@ export const register = createAsyncThunk<
           first_name: userData.firstName,
           last_name: userData.lastName,
         }),
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -66,11 +69,13 @@ export const login = createAsyncThunk<
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken(),
         },
         body: JSON.stringify({
           username: credentials.login,
           password: credentials.password,
         }),
+        credentials: 'include',
       });
 
       const data = await response.json();

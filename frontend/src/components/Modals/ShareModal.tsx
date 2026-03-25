@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styles from './Modals.module.css';
 import type { ShareModalProps } from '../../types';
 import Icon from '../ui/Icon/Icon';
+import { copyToClipboard } from '../../utils/clipboard';
 
 const ShareModal: React.FC<ShareModalProps> = ({ 
   isOpen, 
@@ -15,12 +16,14 @@ const ShareModal: React.FC<ShareModalProps> = ({
   if (!isOpen) return null;
   
   const handleCopyLink = async (url: string, type: 'download' | 'view') => {
-    try {
-      await navigator.clipboard.writeText(url);
+    const success = await copyToClipboard(url);
+    
+    if (success) {
       setCopied(type);
       setTimeout(() => setCopied(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+    } else {
+      console.error('Failed to copy');
+      alert(`Не удалось скопировать. Скопируйте ссылку вручную:\n${url}`);
     }
   };
 

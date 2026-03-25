@@ -175,7 +175,7 @@ class FileViewSet(viewsets.ModelViewSet):
             created_by=request.user,
         )
 
-        logger.info(f"Пользователь {request.user.username} создал публичную ссылку для файла: {file_obj.original_name} (ID: {file_obj.id}), токен: {sharing.share_token[:8]}...")
+        logger.info(f"Пользователь {request.user.username} создал публичную ссылку для файла: {file_obj.original_name} (ID: {file_obj.id}).")
         
         serializer = FileSharingSerializer(sharing, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -214,11 +214,10 @@ class FileSharingViewSet(viewsets.ReadOnlyModelViewSet):
     def revoke(self, request, pk=None):
         share = self.get_object()
         file_name = share.file.original_name
-        share_token = share.share_token[:8]
 
         share.delete()
 
-        logger.info(f"Пользователь {request.user.username} отозвал публичную ссылку для файла: {file_name} (токен: {share_token}...)")
+        logger.info(f"Пользователь {request.user.username} отозвал публичную ссылку для файла: {file_name}.")
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -230,7 +229,7 @@ class PublicShareViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['get'], url_path='(?P<token>[^/.]+)')
     def info(self, request, token=None):
         """Получение информации о файле"""
-        logger.info(f"Публичный запрос информации о файле по токену: {token[:8]}...")
+        logger.info(f"Публичный запрос информации о файле.")
 
         try:
             share = FileSharing.objects.get(share_token=token)
@@ -247,7 +246,7 @@ class PublicShareViewSet(viewsets.GenericViewSet):
             return Response(serializer.data)
             
         except FileSharing.DoesNotExist:
-            logger.warning(f"Попытка доступа к несуществующей публичной ссылке: {token[:8]}...")
+            logger.warning(f"Попытка доступа к несуществующей публичной ссылке.")
             return Response(
                 {"error": "Ссылка недействительна"},
                 status=status.HTTP_404_NOT_FOUND
@@ -256,7 +255,7 @@ class PublicShareViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['get'], url_path='(?P<token>[^/.]+)/download')
     def download(self, request, token=None):
         """Скачивание файла (увеличивает скачивания)"""
-        logger.info(f"Публичный запрос на скачивание файла по токену: {token[:8]}...")
+        logger.info(f"Публичный запрос на скачивание файла.")
         try:
             share = FileSharing.objects.get(share_token=token)
             logger.debug(f"Найден файл: {share.file.id} - {share.file.original_name}, текущие скачивания: {share.file.downloads_count}")
@@ -276,7 +275,7 @@ class PublicShareViewSet(viewsets.GenericViewSet):
             )
             
         except FileSharing.DoesNotExist:
-            logger.warning(f"Попытка скачивания по несуществующей публичной ссылке: {token[:8]}...")
+            logger.warning(f"Попытка скачивания по несуществующей публичной ссылке.")
             return Response(
                 {"error": "Ссылка недействительна"},
                 status=status.HTTP_404_NOT_FOUND

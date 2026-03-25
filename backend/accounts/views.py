@@ -153,7 +153,7 @@ class UserViewSet(viewsets.ModelViewSet):
         Token.objects.filter(user=user).delete()
         token = Token.objects.create(user=user)
 
-        logger.info(f"Пользователь {user.username} (ID: {user.id}) успешно вошел в систему. Токен: {token.key[:8]}...")
+        logger.info(f"Пользователь {user.username} (ID: {user.id}) успешно вошел в систему.")
         
         return Response({
             'success': True,

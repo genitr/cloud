@@ -7,6 +7,7 @@ import type {
   SharingState 
 } from '../../types';
 import { API_URL } from '../../types';
+import { getCSRFToken } from '../../utils/csrf';
 
 const initialState: SharingState = {
   shares: [],
@@ -17,10 +18,23 @@ const initialState: SharingState = {
   totalCount: 0,
 };
 
-const getAuthHeaders = (token: string | null) => ({
-  'Content-Type': 'application/json',
-  ...(token && { 'Authorization': `Token ${token}` }),
-});
+const getAuthHeaders = (token: string | null) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Token ${token}`;
+  }
+  
+  // Добавляем CSRF токен
+  const csrfToken = getCSRFToken();
+  if (csrfToken) {
+    headers['X-CSRFToken'] = csrfToken;
+  }
+  
+  return headers;
+};
 
 // Получить все расшаривания пользователя
 export const fetchShares = createAsyncThunk(

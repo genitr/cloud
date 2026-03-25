@@ -1,6 +1,6 @@
 import type { LoginData, RegistrationData, AuthResponse } from '../types';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 class AuthService {
   // Регистрация
