@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import S from './MainPage.module.css';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { fetchFolders, createFolder, deleteFolder } from '../../store/slices/foldersSlice';
-import { fetchFiles, uploadFile, deleteFile, downloadFile, updateFile } from '../../store/slices/filesSlice';
+import { fetchFiles, uploadFile, deleteFile, downloadFile, updateFile, fetchFileDetails } from '../../store/slices/filesSlice';
 import { fetchCurrentUser } from '../../store/slices/authSlice';
 import { createShare } from '../../store/slices/sharingSlice';
 import { fetchStorageInfo } from '../../store/slices/usersSlice';
@@ -18,10 +18,11 @@ import FilePreviewModal from '../../components/Modals/FilePreviewModal';
 import type { Folder, FileListItem, UploadFileData } from '../../types';
 import { Link } from 'react-router-dom';
 import RenameFileModal from '../../components/Modals/RenameFileModal';
+import SkeletonFileList from '../../components/ui/Skeleton/SkeletonFileList';
 
 const MainPage = () => {
   const dispatch = useAppDispatch();
-  
+
   // Состояния для модальных окон
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
@@ -56,34 +57,33 @@ const MainPage = () => {
 
   // Построение пути для хлебных крошек
   const breadcrumbsPath = useMemo(() => {
-    if (!currentFolderId) return ['Корень'];
-    
+    if (!currentFolderId) return ['root'];
+
     const path: string[] = [];
     let currentId: number | null = currentFolderId;
-    
+
     while (currentId) {
       const folder = folders.find(f => f.id === currentId);
       if (!folder) break;
-      
+
       path.unshift(folder.name);
       currentId = folder.parent_folder;
     }
-    
-    return ['Корень', ...path];
+
+    return ['root', ...path];
   }, [folders, currentFolderId]);
 
   // Обработчик клика по хлебной крошке
   const handleBreadcrumbClick = useCallback((index: number) => {
     if (index === 0) {
-      // Клик на "Корень"
       setCurrentFolderId(null);
       return;
     }
-    
+
     // Находим папку по имени на нужном уровне
     const targetFolderName = breadcrumbsPath[index];
     const targetFolder = folders.find(f => f.name === targetFolderName);
-    
+
     if (targetFolder) {
       setCurrentFolderId(targetFolder.id);
     }
@@ -104,7 +104,7 @@ const MainPage = () => {
 
     if (!user) {
       dispatch(fetchCurrentUser());
-      
+
     }
 
     dispatch(fetchFolders());
@@ -113,20 +113,37 @@ const MainPage = () => {
   }, [dispatch, user, isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('🔒 Не авторизован, пропускаем загрузку данных');
+      return;
+    }
+
+    console.log('📂 Загрузка данных для авторизованного пользователя');
+
+    if (!user) {
+      dispatch(fetchCurrentUser());
+    }
+
+    dispatch(fetchFolders());
+    dispatch(fetchFiles({}));
+  }, [dispatch, user, isAuthenticated]);
+
+  useEffect(() => {
     if (!isAuthenticated) return;
-    
-    // Обновляем статистику каждые 30 секунд
+
     const interval = setInterval(() => {
-      dispatch(fetchFiles({}));
+      if (isAuthenticated) {
+        dispatch(fetchFiles({}));
+      }
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, [dispatch, isAuthenticated]);
 
   // Фильтруем файлы по текущей папке
   const filteredFiles = useMemo(() => {
     if (!files.length) return [];
-    
+
     return files.filter(file => {
       if (currentFolderId === null) {
         return !file.folder_name || file.folder_name === 'Корень';
@@ -154,9 +171,9 @@ const MainPage = () => {
 
   const handleCreateFolder = async (folderName: string) => {
     try {
-      await dispatch(createFolder({ 
-        name: folderName, 
-        parent_folder: currentFolderId 
+      await dispatch(createFolder({
+        name: folderName,
+        parent_folder: currentFolderId
       })).unwrap();
       // Обновляем список папок
       dispatch(fetchFolders());
@@ -170,13 +187,18 @@ const MainPage = () => {
     setDeleteModalOpen(true);
   };
 
-  // Обработчик для открытия превью (клик по файлу)
-  const handleFilePreview = (file: FileListItem) => {
-    setSelectedFileForPreview(file);
-    setPreviewModalOpen(true);
+  // Обработчик для открытия превью
+  const handleFilePreview = async (file: FileListItem) => {
+    try {
+      const fileDetails = await dispatch(fetchFileDetails(file.id)).unwrap();
+      setSelectedFileForPreview(fileDetails as unknown as FileListItem);
+      setPreviewModalOpen(true);
+    } catch (error) {
+      console.error('Ошибка при загрузке файла:', error);
+    }
   };
 
-  // Обработчик для открытия модалки переименования (клик по кнопке ✏️)
+  // Обработчик для открытия модалки переименования
   const handleRenameClick = (file: FileListItem) => {
     setSelectedFileForRename(file);
     setRenameModalOpen(true);
@@ -185,30 +207,30 @@ const MainPage = () => {
   // Обработчик для переименования файла
   const handleFileRename = async (newName: string, newComment?: string) => {
     if (!selectedFileForRename) return;
-    
+
     try {
       const updateData: { name?: string; comment?: string } = {};
-      
+
       if (newName && newName !== selectedFileForRename.name) {
         updateData.name = newName;
       }
-      
+
       if (newComment !== undefined && newComment !== selectedFileForRename.comment) {
         updateData.comment = newComment;
       }
-      
+
       if (Object.keys(updateData).length === 0) {
-        return; // Ничего не изменилось
+        return;
       }
-      
-      await dispatch(updateFile({ 
-        id: selectedFileForRename.id, 
+
+      await dispatch(updateFile({
+        id: selectedFileForRename.id,
         data: updateData
       })).unwrap();
-      
+
       // Обновляем список файлов
       await dispatch(fetchFiles({}));
-      
+
     } catch (error) {
       console.error('Ошибка при обновлении файла:', error);
       throw error;
@@ -218,14 +240,12 @@ const MainPage = () => {
   const handleFileShare = async (file: FileListItem) => {
     try {
       const result = await dispatch(createShare(file.id)).unwrap();
-      
       setShareData({
         file,
         shareUrl: result.share_url,
         viewUrl: `${window.location.origin}/share/${result.share_token}`,
         createdAt: result.created_at
       });
-      
       setShareModalOpen(true);
     } catch (error) {
       console.error('Ошибка при расшаривании файла:', error);
@@ -242,18 +262,18 @@ const MainPage = () => {
 
   const handleFileUpload = async (filesData: UploadFileData[] | null) => {
     if (!filesData || filesData.length === 0) return;
-    
+
     try {
       for (let i = 0; i < filesData.length; i++) {
         const { file, name, comment } = filesData[i];
-        
+
         await dispatch(uploadFile({
           file,
           name: name || undefined,
           comment: comment || undefined,
-          folder: currentFolderId 
+          folder: currentFolderId
         })).unwrap();
-        
+
       }
     } catch (error) {
       console.error('Ошибка при загрузке файлов:', error);
@@ -271,25 +291,20 @@ const MainPage = () => {
         setSelectedFile(null);
       }
       setDeleteModalOpen(false);
+
+      dispatch(fetchFolders());
+      dispatch(fetchFiles({}));
     } catch (error) {
       console.error('Ошибка при удалении:', error);
     }
   };
 
-  // Навигация назад (в родительскую папку)
-  const handleNavigateUp = () => {
-    if (currentFolderId) {
-      const currentFolder = folders.find(f => f.id === currentFolderId);
-      if (currentFolder?.parent_folder) {
-        setCurrentFolderId(currentFolder.parent_folder);
-      } else {
-        setCurrentFolderId(null);
-      }
-    }
-  };
-
   if (authLoading) {
-    return <div className={S.container}>Загрузка профиля...</div>;
+    return (
+      <div className={S.fileListWrapper}>
+        <SkeletonFileList />
+      </div>
+    );
   }
 
   // Если не авторизован, показываем сообщение
@@ -314,16 +329,13 @@ const MainPage = () => {
       <div className={S.contentArea}>
         {/* Тулбар */}
         <div className={S.toolbarWrapper}>
-          <Toolbar 
+          <Toolbar
             onUpload={() => setUploadModalOpen(true)}
             onCreateFolder={() => setCreateFolderModalOpen(true)}
-            onNavigateUp={handleNavigateUp}
-            showNavigateUp={!!currentFolderId}
             breadcrumbsPath={breadcrumbsPath}
             handleBreadcrumbClick={handleBreadcrumbClick}
           />
         </div>
-
         {/* Прокручиваемый список файлов */}
         <div className={S.fileListWrapper}>
           <StorageFileList

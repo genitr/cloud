@@ -30,7 +30,7 @@ export const formatDate = (dateString: string, withTime = false) => {
     if(withTime) {
       return new Date(dateString).toLocaleString('ru-RU', {
         day: 'numeric',
-        month: 'long',
+        month: 'numeric',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
@@ -39,7 +39,7 @@ export const formatDate = (dateString: string, withTime = false) => {
 
     return new Date(dateString).toLocaleDateString('ru-RU', {
       day: 'numeric',
-      month: 'long',
+      month: 'numeric',
       year: 'numeric',
     });
     

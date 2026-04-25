@@ -1,67 +1,71 @@
-import { Logo } from './Logo';
-import { Admin } from './Admin';
-import { User } from './User';
-import { Logout } from './Logout';
-import { Login } from './Login';
-import { Register } from './Register';
-import { ArrowUp } from './ArrowUp';
-import { Warning } from './storage/Warning';
-import { UploadFile } from './storage/UploadFile';
-import { Share } from './storage/Share';
-import { Edit } from './storage/Edit';
-import { Download } from './storage/Download';
-import { Delete } from './storage/Delete';
-import { Folder } from './storage/Folder';
-import { AudioFile } from './storage/AudioFile';
-import { ImageFile } from './storage/ImageFile';
-import { TextFile } from './storage/TextFile';
-import { ZipFile } from './storage/ZipFile';
-import { PdfFile } from './storage/PdfFile';
-import { VideoFile } from './storage/VideoFile';
-import { File } from './storage/File';
-import { Arrow } from './storage/Arrow';
-import { Eye } from './storage/Eye';
-import { Pencil } from './storage/Pencil';
-import { Comment } from './storage/Comment';
-import { Link } from './storage/Link';
-import { Clipboard } from './storage/Clipboard';
-import { Lock } from './storage/Lock';
-import { Unlock } from './storage/Unlock';
-import { Crown } from './storage/Crown';
-import { Database } from './storage/Database';
+import { 
+  Logo, AdminPanelSettings, AccountCircle, LogIn, LogOut, Register,
+  ArrowDropUp, ArrowDropDown, ArrowLeft, ArrowRight, Warning, ButtonOk,
+  FileSize
+} from './System';
+import {
+  FileUpload, FileShare, FileEdit, FileDownload, FileDelete, Eye, Pencil, 
+  FileComment, FileLink, LinkCopy, LinkCopied, NewFile, NewFolder
+ } from './FileActions';
+import { 
+  FileFolder, FileImage, FileAudio, FileText, FileZip, FilePdf, FileVideo, FileBase, FileDoc
+} from './FileTypes';
+import { 
+  LockUser, UnlockUser, UserFolder, AdminUser , Crown, UserDelete,
+  AllUsers, BlockedUser, ActiveUser, CalendarMonth, MakeAdmin,
+  AccessTime
+} from './AdminPanel';
+
 
 const iconMap = {
   logo: Logo,
-  admin: Admin,
-  user: User,
-  logout: Logout,
-  login: Login,
+  admin: AdminPanelSettings,
+  user: AccountCircle,
+  logout: LogOut,
+  login: LogIn,
   register: Register,
-  arrowUp: ArrowUp,
+  arrowUp: ArrowDropUp,
+  arrowDown: ArrowDropDown,
+  arrowLeft: ArrowLeft,
+  arrowRight: ArrowRight,
   warning: Warning,
-  uploadFile: UploadFile,
-  share: Share,
-  edit: Edit,
-  download: Download,
-  delete: Delete,
-  folder: Folder,
-  audioFile: AudioFile,
-  imageFile: ImageFile,
-  textFile: TextFile,
-  zipFile: ZipFile,
-  pdfFile: PdfFile,
-  videoFile: VideoFile,
-  file: File,
-  arrow: Arrow,
+  uploadFile: FileUpload,
+  share: FileShare,
+  edit: FileEdit,
+  download: FileDownload,
+  delete: FileDelete,
+  folder: FileFolder,
+  audioFile: FileAudio,
+  imageFile: FileImage,
+  textFile: FileText,
+  zipFile: FileZip,
+  pdfFile: FilePdf,
+  docFile: FileDoc,
+  videoFile: FileVideo,
+  file: FileBase,
   eye: Eye,
   pencil: Pencil,
-  comment: Comment,
-  link: Link,
-  clipboard: Clipboard,
-  lock: Lock,
-  unlock: Unlock,
+  comment: FileComment,
+  link: FileLink,
+  linkCopy: LinkCopy,
+  linkCopied: LinkCopied,
+  lock: LockUser,
+  unlock: UnlockUser,
+  userFiles: UserFolder,
   crown: Crown,
-  database: Database
+  userDelete: UserDelete,
+  makeAdmin: MakeAdmin,
+  adminUser: AdminUser,
+  allUsers: AllUsers,
+  accessTime: AccessTime,
+  calendar: CalendarMonth,
+  blockedUser: BlockedUser,
+  activeUser: ActiveUser,
+  database: Logo,
+  ok: ButtonOk,
+  newFile: NewFile,
+  newFolder: NewFolder,
+  fileSize: FileSize
 };
 
 export default iconMap;

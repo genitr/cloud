@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useMediaQuery } from 'react-responsive';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { register, clearError } from '../../store/slices/authSlice';
@@ -18,6 +19,8 @@ const RegistrationForm: React.FC = () => {
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
 
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  
   // Очищаем ошибку при размонтировании
   useEffect(() => {
     return () => {
@@ -25,7 +28,16 @@ const RegistrationForm: React.FC = () => {
     };
   }, [dispatch]);
 
-  const fields = [
+  const fields = isMobile 
+  ?[
+    { name: 'login', type: 'text' as const, label: 'Логин', placeholder: 'Введите логин' },
+    { name: 'confirmPassword', type: 'password' as const, label: 'Подтверждение пароля', placeholder: 'Подтвердите пароль' },
+    { name: 'email', type: 'email' as const, label: 'Почта', placeholder: 'Введите почту' },
+    { name: 'firstName', type: 'text' as const, label: 'Имя', placeholder: 'Введите имя' },
+    { name: 'password', type: 'password' as const, label: 'Пароль', placeholder: 'Введите пароль' },
+    { name: 'lastName', type: 'text' as const, label: 'Фамилия', placeholder: 'Введите фамилию' },
+  ]
+  : [
     { name: 'login', type: 'text' as const, label: 'Логин', placeholder: 'Введите логин' },
     { name: 'email', type: 'email' as const, label: 'Почта', placeholder: 'Введите почту' },
     { name: 'password', type: 'password' as const, label: 'Пароль', placeholder: 'Введите пароль' },

@@ -1,4 +1,6 @@
 import React from 'react';
+import { useMediaQuery } from 'react-responsive';
+
 import S from './Toolbar.module.css';
 import Breadcrumbs from '../Breadcrumbs/Breadcrumbs';
 import Icon from '../ui/Icon/Icon';
@@ -6,8 +8,6 @@ import Icon from '../ui/Icon/Icon';
 interface ToolbarProps {
     onUpload: () => void;
     onCreateFolder: () => void;
-    onNavigateUp?: () => void;
-    showNavigateUp?: boolean;
     breadcrumbsPath: string[];
     handleBreadcrumbClick?: (index: number) => void;
 }
@@ -15,23 +15,14 @@ interface ToolbarProps {
 const Toolbar: React.FC<ToolbarProps> = ({
     onUpload,
     onCreateFolder,
-    onNavigateUp,
-    showNavigateUp = false,
     breadcrumbsPath = [],
     handleBreadcrumbClick
 }) => {
+    const isMobile = useMediaQuery({ maxWidth: 640 });
+
     return (
         <div className={S.toolbar}>
             <div className={S.leftButtons}>
-                {showNavigateUp && (
-                    <button 
-                        className={S.navButton} 
-                        onClick={onNavigateUp}
-                        title="На уровень вверх"
-                    >
-                        <Icon name='arrow' size={18} /> Наверх
-                    </button>
-                )}
                 {/* Хлебные крошки */}
                 <Breadcrumbs 
                     path={breadcrumbsPath} 
@@ -40,11 +31,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
             </div>
 
             <div className={S.rightButtons}>
-                <button className={S.primaryButton} onClick={onUpload}>
-                    <Icon name='uploadFile' size={18} /> Загрузить файл
+                <button className={S.primaryButton} onClick={onUpload} title='Загрузить новый файл'>
+                    {isMobile ? <Icon name='newFile' size={34}/> : 'Загрузить файл'}
                 </button>
-                <button className={S.secondaryButton} onClick={onCreateFolder}>
-                    <Icon name='folder' size={18} /> Создать папку
+                <button className={S.secondaryButton} onClick={onCreateFolder} title='Создать новую папку'>
+                    {isMobile ? <Icon name='newFolder' size={34}/> : 'Создать папку'}
                 </button>
             </div>
         </div>

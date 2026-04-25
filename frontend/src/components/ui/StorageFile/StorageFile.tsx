@@ -1,4 +1,5 @@
 import React from 'react';
+import { useMediaQuery } from 'react-responsive';
 import S from './StorageFile.module.css';
 import type { FileListItem } from '../../../types';
 import { formatDate } from '../../../utils/formatNumber';
@@ -30,7 +31,9 @@ const StorageFile: React.FC<FileItemProps> = ({
     comment,
     last_downloaded_at
   } = file;
-  
+
+  const isMobile = useMediaQuery({ maxWidth: 640 });
+
   const getFileIcon = () => {
     if (!content_type) return <Icon name='file' />;
     if (content_type.startsWith('image/')) return <Icon name='imageFile' />;
@@ -49,61 +52,124 @@ const StorageFile: React.FC<FileItemProps> = ({
   };
 
   return (
-    <div className={S.item}>
-      <div className={S.itemIcon} onClick={() => onPreview(file)}>
-        {getFileIcon()}
-      </div>
-      <div className={S.itemInfo} onClick={() => onPreview(file)}>
-        <div className={S.itemName}>{name}</div>
-      </div>
-      <div className={S.itemMeta}>
-        {comment && (
-          <div className={S.itemComment}>
-            {truncateComment(comment)}
+    <>
+      {isMobile ? (
+        <div className={S.mobileItem}>
+          <div className={S.mobileFileGroup}>
+            <div className={S.mobileActionGroup}>
+              <div className={S.mobileNameGroup}>
+                <div className={S.itemIcon} onClick={() => onPreview(file)}>
+                  {getFileIcon()}
+                </div>
+                <div className={S.itemInfo} onClick={() => onPreview(file)}>
+                  <div className={S.itemName}>{name}</div>
+                </div>
+              </div>
+              <div className={S.mobileItemActions}>
+                <button 
+                  className={S.actionButton}
+                  onClick={() => onShare(file)}
+                  title="Поделиться"
+                >
+                  <Icon name='share' />
+                </button>
+                <button 
+                  className={S.actionButton}
+                  onClick={() => onRename?.(file)}
+                  title="Переименовать"
+                >
+                  <Icon name='edit' />
+                </button>
+                <button 
+                  className={S.actionButton}
+                  onClick={() => onDelete(file)}
+                  title="Удалить"
+                >
+                  <Icon name='delete' />
+                </button>
+                <button 
+                  className={S.actionButton} 
+                  onClick={() => onDownload(file)}
+                  title="Скачать">
+                  <Icon name='download' />
+                </button>
+              </div>
+            </div>
+            <div className={S.mobileItemMeta}>
+              <div className={S.itemMeta}>
+                <Icon name='fileSize' size={10} /> {size_formatted}
+              </div>
+              <div className={S.itemMeta}>
+                <Icon name='calendar' size={10} /> {formatDate(uploaded_at)}
+              </div>
+              <div className={S.itemMeta}>
+                {last_downloaded_at && (
+                  <div>
+                    <Icon name='accessTime' size={10} /> {formatDate(last_downloaded_at, true)}</div>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-      <div className={S.itemMeta}>
-        {size_formatted}
-      </div>
-      <div className={S.itemMeta}>
-        {formatDate(uploaded_at)}
-      </div>
-      <div className={S.itemMeta}>
-        {last_downloaded_at && (
-          <div>{formatDate(last_downloaded_at, true)}</div>
-        )}
-      </div>
-      <div className={S.itemActions}>
-        <button 
-          className={S.actionButton}
-          onClick={() => onShare(file)}
-          title="Поделиться"
-        >
-          <Icon name='share' />
-        </button>
-        <button 
-          className={S.actionButton}
-          onClick={() => onRename?.(file)}
-          title="Переименовать"
-        >
-          <Icon name='edit' />
-        </button>
-        <button 
-          className={S.actionButton}
-          onClick={() => onDelete(file)}
-          title="Удалить"
-        >
-          <Icon name='delete' />
-        </button>
-        <button 
-          className={S.actionButton} 
-          onClick={() => onDownload(file)}
-          title="Скачать">
-          <Icon name='download' />
-        </button>
-      </div>
-    </div>
+        </div>
+      ) : (
+        <div className={S.item}>
+          <div className={S.itemIcon} onClick={() => onPreview(file)}>
+            {getFileIcon()}
+          </div>
+          <div className={S.itemInfo} onClick={() => onPreview(file)}>
+            <div className={S.itemName}>{name}</div>
+          </div>
+          <div className={S.itemMeta}>
+            {comment && (
+              <div className={S.itemComment}>
+                {truncateComment(comment)}
+              </div>
+            )}
+          </div>
+          <div className={S.itemMeta}>
+            {size_formatted}
+          </div>
+          <div className={S.itemMeta}>
+            {formatDate(uploaded_at)}
+          </div>
+          <div className={S.itemMeta}>
+            {last_downloaded_at && (
+              <div>{formatDate(last_downloaded_at, true)}</div>
+            )}
+          </div>
+          <div className={S.itemActions}>
+            <button 
+              className={S.actionButton}
+              onClick={() => onShare(file)}
+              title="Поделиться"
+            >
+              <Icon name='share' />
+            </button>
+            <button 
+              className={S.actionButton}
+              onClick={() => onRename?.(file)}
+              title="Переименовать"
+            >
+              <Icon name='edit' />
+            </button>
+            <button 
+              className={S.actionButton}
+              onClick={() => onDelete(file)}
+              title="Удалить"
+            >
+              <Icon name='delete' />
+            </button>
+            <button 
+              className={S.actionButton} 
+              onClick={() => onDownload(file)}
+              title="Скачать">
+              <Icon name='download' />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+    
   );
 };
 

@@ -43,12 +43,12 @@ const StorageFileList: React.FC<StorageFileListProps> = ({
     return (
         <div className={S.fileList}>
             <div className={S.listHeader}>
-                <div className={S.headerName}>Название</div>
-                <div className={S.headerName}>Комментарий</div>
-                <div className={S.headerSize}>Размер</div>
-                <div className={S.headerModified}>Загружен</div>
-                <div className={S.headerSize}>Последнее скачивание</div>
-                <div className={S.headerActions}>Действия</div>
+                <div className={S.headerTitle}>Название</div>
+                <div className={S.headerTitle}>Комментарий</div>
+                <div className={S.headerTitle}>Размер</div>
+                <div className={S.headerTitle}>Загружен</div>
+                <div className={S.headerTitle}>Последнее скачивание</div>
+                <div className={S.headerTitle}>Действия</div>
             </div>
 
             {foldersIsLoading && <div>Загрузка папок...</div>}

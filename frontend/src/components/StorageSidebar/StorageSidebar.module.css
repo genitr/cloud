@@ -1,7 +1,8 @@
 .sidebar {
   width: 280px;
-  background: #ffffff;
-  border-right: 1px solid #e0e0e0;
+  background: #374263;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
   height: 80vh;
   position: sticky;
   top: 80px;
@@ -13,98 +14,23 @@
 .header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
 }
 
 .title {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
-  margin: 0 0 12px 0;
-}
-
-.userBadge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 8px;
-}
-
-.userAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #007bff;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
-  text-transform: uppercase;
-}
-
-.userName {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-}
-
-.statsGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.statCard {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.statCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.statIcon {
-  font-size: 24px;
-  min-width: 32px;
+  color: #e6dcff;
   text-align: center;
-}
-
-.statContent {
-  display: flex;
-  flex-direction: column;
-}
-
-.statValue {
-  font-size: 16px;
-  font-weight: 600;
-  color: #007bff;
-  line-height: 1.2;
-}
-
-.statLabel {
-  font-size: 11px;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  margin: 0 0 12px 0;
 }
 
 .usageSection {
   margin-bottom: 24px;
   padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #374263;
+  border: 1px solid #e6dcff;
   border-radius: 8px;
-  color: white;
+  color: #e6dcff;
 }
 
 .usageHeader {
@@ -153,22 +79,29 @@
   opacity: 0.9;
 }
 
-.typesSection {
-  margin-bottom: 24px;
+.usageSectionMobile {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: #374263;
+  border: 1px solid #e6dcff;
+  border-radius: 8px;
+  color: #e6dcff;
 }
 
-.sectionTitle {
-  font-size: 14px;
+.usageTitleMobile {
+  /* background: #2245af; */
+  /* padding: 8px; */
+  /* border: 1px solid #e6dcff; */
+  color: #e6dcff;
+}
+
+.usageValueMobile {
   font-weight: 600;
-  color: #333;
-  margin: 0 0 12px 0;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #e0e0e0;
+  margin-left: 6px;
 }
 
-
-
-/* Scrollbar styles */
+/* Скролл-бар */
 .sidebar::-webkit-scrollbar {
   width: 6px;
 }
@@ -186,7 +119,7 @@
   background: #a8a8a8;
 }
 
-/* Responsive */
+/* Мобильная версия */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -194,15 +127,17 @@
     position: static;
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
+    padding: 1rem;
   }
   
-  .statsGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 
 @media (max-width: 480px) {
-  .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+  .sidebar {
+    padding: 0.75rem;
+  }
+  
+  .userName {
+    font-size: 0.875rem;
   }
 }

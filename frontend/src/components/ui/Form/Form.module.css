@@ -1,6 +1,7 @@
 .formWrapper {
   max-width: 900px;
-  background: white;
+  background: #374263;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   padding: 40px;
@@ -8,7 +9,7 @@
 
 .title {
   text-align: center;
-  color: #333;
+  color: #e6dcff;
   margin-bottom: 30px;
   font-size: 28px;
   font-weight: 600;
@@ -39,8 +40,12 @@
   gap: 20px;
 }
 
+.fieldWrapper {
+  width: 100%;
+}
+
 .submitButton {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   color: white;
   padding: 15px 30px;
   border: none;
@@ -105,7 +110,7 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .title {
     font-size: 24px;
   }
@@ -116,32 +121,6 @@
   flex-direction: column;
   gap: 15px;
   margin-top: 10px;
-}
-
-.submitButton {
-  flex: 1;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 15px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.submitButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-}
-
-.submitButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: linear-gradient(135deg, #a0a0a0 0%, #808080 100%);
 }
 
 .alternateButton {

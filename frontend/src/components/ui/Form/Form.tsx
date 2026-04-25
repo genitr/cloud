@@ -1,11 +1,12 @@
 import { useState } from 'react';
+
 import type { ChangeEvent, SubmitEvent } from 'react';
-import styles from './Form.module.css';
+import S from './Form.module.css';
 import Input from '../Input/Input';
-import type { 
-  FormProps, 
-  FormData, 
-  FormErrors, 
+import type {
+  FormProps,
+  FormData,
+  FormErrors,
   SubmitMessage,
   ValidationRule,
   FormFieldValue
@@ -24,7 +25,7 @@ const Form = ({
   showAlternateAction = false,
   serverError
 }: FormProps) => {
-  
+
   const [formData, setFormData] = useState<FormData>(initialData);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -32,7 +33,7 @@ const Form = ({
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     // Обработка разных типов полей
     let fieldValue: FormFieldValue = value;
     if (type === 'number') {
@@ -43,7 +44,7 @@ const Form = ({
       ...prev,
       [name]: fieldValue
     }));
-    
+
     if (errors[name]) {
       setErrors((prev: FormErrors) => ({
         ...prev,
@@ -58,7 +59,7 @@ const Form = ({
     Object.keys(validationRules).forEach(fieldName => {
       const rule: ValidationRule = validationRules[fieldName];
       const value = formData[fieldName];
-      
+
       if (rule.required && rule.validate) {
         const error = rule.validate(value, formData);
         if (error) {
@@ -72,10 +73,10 @@ const Form = ({
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const validationErrors = validateForm();
     setErrors(validationErrors);
-    
+
     if (Object.keys(validationErrors).length > 0) {
       return;
     }
@@ -85,28 +86,28 @@ const Form = ({
 
     try {
       const result = await onSubmit(formData);
-      
-      const successMessage = result && typeof result === 'object' && 'message' in result 
-        ? String(result.message) 
+
+      const successMessage = result && typeof result === 'object' && 'message' in result
+        ? String(result.message)
         : 'Форма успешно отправлена!';
-      
+
       setSubmitMessage({
         type: 'success',
         text: successMessage
       });
-      
+
       // Очистка формы после успешной отправки
       setFormData(initialData);
-      
+
     } catch (error: unknown) {
       let errorMessage = 'Произошла ошибка при отправке';
-      
+
       if (error && typeof error === 'object' && 'message' in error) {
         errorMessage = String(error.message);
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       setSubmitMessage({
         type: 'error',
         text: errorMessage
@@ -120,33 +121,33 @@ const Form = ({
     if (columns === 1) {
       return [fields];
     }
-    
+
     const columnsArray: typeof fields[] = Array.from({ length: columns }, () => []);
     fields.forEach((field, index) => {
       const columnIndex = index % columns;
       columnsArray[columnIndex].push(field);
     });
-    
+
     return columnsArray;
   };
 
   const fieldColumns = getFieldsByColumn();
 
   return (
-    <div className={styles.formWrapper}>
-      {title && <h2 className={styles.title}>{title}</h2>}
+    <div className={S.formWrapper}>
+      {title && <h2 className={S.title}>{title}</h2>}
 
       {serverError && (
-        <div className={styles.error}>
+        <div className={S.error}>
           {serverError}
         </div>
       )}
-      
-      <form onSubmit={handleSubmit} className={styles.form} noValidate>
-        
-        <div className={`${styles.columns} ${styles[`columns-${columns}`]}`}>
+
+      <form onSubmit={handleSubmit} className={S.form} noValidate>
+
+        <div className={`${S.columns} ${S[`columns-${columns}`]}`}>
           {fieldColumns.map((columnFields, columnIndex) => (
-            <div key={columnIndex} className={styles.column}>
+            <div key={columnIndex} className={S.columns}>
               {columnFields.map(field => (
                 <Input
                   key={field.name}
@@ -164,12 +165,11 @@ const Form = ({
             </div>
           ))}
         </div>
-
-        <div className={styles.actions}>
-          <button 
-            type="submit" 
+        <div className={S.actions}>
+          <button
+            type="submit"
             disabled={isSubmitting}
-            className={styles.submitButton}
+            className={S.submitButton}
           >
             {isSubmitting ? 'Отправка...' : submitButtonText}
           </button>
@@ -178,7 +178,7 @@ const Form = ({
             <button
               type="button"
               onClick={onAlternateAction}
-              className={styles.alternateButton}
+              className={S.alternateButton}
               disabled={isSubmitting}
             >
               {alternateActionText}
@@ -187,7 +187,7 @@ const Form = ({
         </div>
 
         {submitMessage.text && (
-          <div className={`${styles.message} ${styles[submitMessage.type]}`}>
+          <div className={`${S.message} ${S[submitMessage.type]}`}>
             {submitMessage.text}
           </div>
         )}

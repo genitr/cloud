@@ -11,4 +11,8 @@ router.register(r'public', PublicShareViewSet, basename='public')
 
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('api/public/<str:token>/', PublicShareViewSet.as_view({'get': 'info'}), name='public-info'),
+    path('api/public/<str:token>/preview/', PublicShareViewSet.as_view({'get': 'preview'}), name='public-preview'),
+    path('api/public/<str:token>/record_view/', PublicShareViewSet.as_view({'post': 'record_view'}), name='public-record-view'),
+    path('api/public/<str:token>/download/', PublicShareViewSet.as_view({'get': 'download'}), name='public-download'),
 ]

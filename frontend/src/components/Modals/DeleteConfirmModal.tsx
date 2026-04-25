@@ -1,7 +1,6 @@
 import React from 'react';
 import S from './Modals.module.css';
 import type { DeleteConfirmModalProps } from '../../types';
-import Icon from '../ui/Icon/Icon';
 
 const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ 
   isOpen, 
@@ -28,24 +27,36 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       >
         <div className={S.modalHeader}>
           <h3>Подтверждение удаления</h3>
-          <button className={S.closeButton} onClick={onClose}>✕</button>
+          <button 
+            className={S.closeButton} 
+            title='Закрыть окно' 
+            onClick={onClose}>✕</button>
         </div>
         
         <div className={S.modalContent}>
-          <Icon name='login' className={S.warningIcon} />
           <p className={S.confirmText}>
-            Вы действительно хотите удалить <strong>"{itemName}"</strong>?
+            Вы действительно хотите удалить
           </p>
+          <p className={S.confirmName}>
+            <strong>"{itemName}"</strong> ?
+          </p>
+          
           <p className={S.warningText}>
             Это действие нельзя будет отменить.
           </p>
         </div>
         
         <div className={S.modalFooter}>
-          <button className={S.cancelButton} onClick={onClose}>
+          <button 
+            className={S.cancelButton} 
+            title='Отменить удаление' 
+            onClick={onClose}>
             Отмена
           </button>
-          <button className={S.deleteButton} onClick={onConfirm}>
+          <button 
+            className={S.deleteButton} 
+            title='Удалить файл' 
+            onClick={onConfirm}>
             Удалить
           </button>
         </div>

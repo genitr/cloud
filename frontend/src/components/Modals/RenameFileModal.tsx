@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import styles from './Modals.module.css';
+import S from './Modals.module.css';
 import type { FileListItem } from '../../types';
 import Icon from '../ui/Icon/Icon';
 
@@ -49,11 +49,11 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({
       }
       return;
     }
-    
+
     // Сохраняем расширение файла
     const extension = file?.name.substring(file.name.lastIndexOf('.'));
     const fullName = newName.trim() + (extension || '');
-    
+
     setLoading(true);
     setError('');
     try {
@@ -81,30 +81,33 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({
   const extension = file.name.substring(file.name.lastIndexOf('.'));
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={`${styles.modal} ${styles.renameModal}`} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
+    <div className={S.modalOverlay} onClick={onClose}>
+      <div className={`${S.modal} ${S.renameModal}`} onClick={(e) => e.stopPropagation()}>
+        <div className={S.modalHeader}>
           <h3>Редактировать файл</h3>
-          <button className={styles.closeButton} onClick={onClose}>✕</button>
+          <button
+            className={S.closeButton}
+            title='Закрыть окно'
+            onClick={onClose}>✕</button>
         </div>
-        
-        <div className={styles.modalContent}>
-          <div className={styles.fileInfo}>
-            <div className={styles.fileIcon}><Icon name='file' size={24} /></div>
-            <div className={styles.fileDetails}>
-              <div className={styles.fileName}>{file.name}</div>
+
+        <div className={S.modalContent}>
+          <div className={S.fileInfo}>
+            <div className={S.fileIcon}><Icon name='file' size={32} /></div>
+            <div className={S.fileDetails}>
+              <div className={S.fileName}>{file.name}</div>
             </div>
           </div>
-          
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className={styles.labelIcon}><Icon name='pencil' size={16} /></span>
+
+          <div className={S.inputGroup}>
+            <label className={S.label}>
+              <span className={S.labelIcon}><Icon name='pencil' size={16} /></span>
               Имя файла
             </label>
-            <div className={styles.nameInputWrapper}>
+            <div className={S.nameInputWrapper}>
               <input
                 type="text"
-                className={styles.nameInput}
+                className={S.nameInput}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -112,20 +115,20 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({
                 disabled={loading}
                 placeholder="Введите новое имя"
               />
-              <span className={styles.extension}>{extension}</span>
+              <span className={S.extension}>{extension}</span>
             </div>
-            <p className={styles.hint}>
+            <p className={S.hint}>
               Расширение файла {extension} сохранится автоматически
             </p>
           </div>
-          
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>
-              <span className={styles.labelIcon}><Icon name='comment' size={16} /></span>
+
+          <div className={S.inputGroup}>
+            <label className={S.label}>
+              <span className={S.labelIcon}><Icon name='comment' size={16} /></span>
               Комментарий
             </label>
             <textarea
-              className={styles.commentInput}
+              className={S.commentInput}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => {
@@ -135,20 +138,24 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({
               placeholder="Добавьте комментарий к файлу..."
               rows={3}
             />
-            <p className={styles.hint}>
+            <p className={S.hint}>
               Комментарий будет виден при просмотре файла
             </p>
           </div>
-          
-          {error && <div className={styles.errorMessage}>{error}</div>}
+
+          {error && <div className={S.errorMessage}>{error}</div>}
         </div>
-        
-        <div className={styles.modalFooter}>
-          <button className={styles.cancelButton} onClick={onClose} disabled={loading}>
+
+        <div className={S.modalFooter}>
+          <button
+            className={S.cancelButton}
+            title='Отменить изменения'
+            onClick={onClose} disabled={loading}>
             Отмена
           </button>
-          <button 
-            className={styles.saveButton} 
+          <button
+            className={S.saveButton}
+            title='Сохранить изменения'
             onClick={handleSave}
             disabled={loading}
           >

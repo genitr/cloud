@@ -12,8 +12,10 @@ const Header = () => {
   const { user, isAuthenticated, isLoading } = useAppSelector(state => state.auth);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
+  // Загружаем пользователя только если есть сессия
   useEffect(() => {
     if (isAuthenticated && !user) {
+      console.log('📥 Загрузка данных пользователя...');
       dispatch(fetchCurrentUser());
     }
   }, [isAuthenticated, user, dispatch]);
@@ -30,57 +32,41 @@ const Header = () => {
     }
   };
 
-  // Показываем заглушку во время загрузки профиля
-  const renderProfileButton = () => {
-    if (isLoading) {
-      return (
-        <div className={S.profileButtonSkeleton}>
-          <div className={S.skeletonAvatar} />
-          <div className={S.skeletonName} />
-        </div>
-      );
-    }
-
-    if (!user) return null;
-
+  // Показываем заглушку во время загрузки
+  if (isLoading) {
     return (
-      <button 
-        className={S.profileButton}
-        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-      >
-        <div className={S.profileAvatar}>
-          {user.first_name?.[0] || user.username[0]}
+      <header className={S.header}>
+        <div className={S.container}>
+          <Link to="/" className={S.logo}>
+            <Icon name='logo' className={S.logoIcon} size={36} />
+            <span>Диск</span>
+          </Link>
+          <div className={S.skeleton}>Загрузка...</div>
         </div>
-        <span className={S.profileName}>
-          {user.first_name || user.username}
-        </span>
-        <Icon 
-          name="arrowUp" 
-          className={`${S.chevron} ${isProfileMenuOpen ? S.rotated : ''}`}
-          size={16}
-        />
-      </button>
+      </header>
     );
-  };
+  }
 
   // Навигационные элементы для неавторизованных пользователей
   const publicNavItems = [
     { 
       path: '/login', 
       label: 'Войти', 
-      icon: <Icon name='login' className={S.navLinkIcon} /> 
+      icon: <Icon name='login' className={S.navLinkIcon} />, 
+      title: 'Перейти к форме входа' 
     },
     { 
       path: '/registration', 
       label: 'Зарегистрироваться', 
-      icon: <Icon name='register' className={S.navLinkIcon} /> 
+      icon: <Icon name='register' className={S.navLinkIcon} />,
+      title: 'Перейти к форме регистрации' 
     },
   ];
 
   return (
     <header className={S.header}>
       <div className={S.container}>
-        <Link to="/" className={S.logo}>
+        <Link to="/" className={S.logo} title='Перейти к домашней странице'>
           <Icon name='logo' className={S.logoIcon} size={36} />
           <span className="text-gradient">Диск</span>
         </Link>
@@ -91,23 +77,33 @@ const Header = () => {
               <li key={item.path} className={S.navItem}>
                 <Link
                   to={item.path}
-                  className={`${S.navLink} ${
-                    location.pathname === item.path ? S.active : ''
-                  }`}
+                  className={`${S.navLink} ${location.pathname === item.path ? S.active : ''}`}
+                  title={item.title}
                 >
                   {item.icon}
-                  <span>{item.label}</span>
+                  <span className={S.navItemLabel}>{item.label}</span>
                 </Link>
               </li>
             ))}
             
             {/* Блок с профилем для авторизованных пользователей */}
-            {isAuthenticated && (
+            {isAuthenticated && user && (
               <li className={`${S.navItem} ${S.profileItem}`}>
                 <div className={S.profileContainer}>
-                  {renderProfileButton()}
+                  <button 
+                    className={S.profileButton}
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  >
+                    <div className={S.profileAvatar}>
+                      {user.first_name?.[0] || user.username[0]}
+                    </div>
+                    <span className={S.profileName}>
+                      {user.first_name || user.username}
+                    </span>
+                    <Icon name="arrowUp" className={`${S.chevron} ${isProfileMenuOpen ? S.rotated : ''}`} size={16} />
+                  </button>
                   
-                  {isProfileMenuOpen && user && (
+                  {isProfileMenuOpen && (
                     <div className={S.profileDropdown}>
                       <div className={S.dropdownHeader}>
                         <div className={S.dropdownAvatar}>
@@ -125,20 +121,19 @@ const Header = () => {
                       
                       {user.is_staff && (
                         <Link 
-                          to="/admin" 
-                          className={S.dropdownItem}
-                          onClick={() => setIsProfileMenuOpen(false)}
-                        >
+                          to="/admin" className={S.dropdownItem} 
+                          title='Панель управления пользователями' 
+                          onClick={() => setIsProfileMenuOpen(false)}>
                           <Icon name='admin' size={18} />
                           <span>Админ панель</span>
                         </Link>
                       )}
                       
                       <Link 
-                        to="/main" 
-                        className={S.dropdownItem}
-                        onClick={() => setIsProfileMenuOpen(false)}
-                      >
+                        to="/main"
+                        title='Файловое хранилище' 
+                        className={S.dropdownItem} 
+                        onClick={() => setIsProfileMenuOpen(false)}>
                         <Icon name='user' size={18} />
                         <span>Мой диск</span>
                       </Link>
@@ -146,9 +141,9 @@ const Header = () => {
                       <div className={S.dropdownDivider} />
                       
                       <button 
-                        className={S.dropdownItem}
-                        onClick={handleLogout}
-                      >
+                        className={S.dropdownItem} 
+                        title='Выйти из профиля пользователя' 
+                        onClick={handleLogout}>
                         <Icon name='logout' size={18} />
                         <span>Выйти</span>
                       </button>
@@ -159,71 +154,6 @@ const Header = () => {
             )}
           </ul>
         </nav>
-
-        {/* Мобильное меню */}
-        <div className={S.mobileMenu}>
-          {isAuthenticated ? (
-            <div className={S.mobileProfile}>
-              <button 
-                className={S.mobileProfileButton}
-                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              >
-                <div className={S.mobileAvatar}>
-                  {user?.first_name?.[0] || user?.username[0] || 'U'}
-                </div>
-              </button>
-              
-              {isProfileMenuOpen && user && (
-                <div className={S.mobileDropdown}>
-                  <div className={S.mobileDropdownHeader}>
-                    <div className={S.mobileDropdownAvatar}>
-                      {user.first_name?.[0] || user.username[0]}
-                    </div>
-                    <div className={S.mobileDropdownInfo}>
-                      <div className={S.mobileDropdownName}>
-                        {user.first_name} {user.last_name}
-                      </div>
-                      <div className={S.mobileDropdownEmail}>{user.email}</div>
-                    </div>
-                  </div>
-                  
-                  <div className={S.mobileDropdownDivider} />
-                  
-                  <select
-                    className={S.mobileSelect}
-                    value={location.pathname}
-                    onChange={(e) => {
-                      if (e.target.value === 'logout') {
-                        handleLogout();
-                      } else {
-                        navigate(e.target.value);
-                        setIsProfileMenuOpen(false);
-                      }
-                    }}
-                  >
-                    <option value="/">Главная</option>
-                    <option value="/profile">Профиль</option>
-                    {user.is_staff && <option value="/admin">Админ панель</option>}
-                    <option value="/main">Мой диск</option>
-                    <option value="logout">Выйти</option>
-                  </select>
-                </div>
-              )}
-            </div>
-          ) : (
-            <select
-              className={S.mobileSelect}
-              value={location.pathname}
-              onChange={(e) => navigate(e.target.value)}
-            >
-              {publicNavItems.map((item) => (
-                <option key={item.path} value={item.path}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
       </div>
     </header>
   );

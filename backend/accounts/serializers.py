@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
+
+from django.db import models
 
 
 User = get_user_model()
@@ -9,6 +10,10 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     """Базовый сериализатор для списка пользователей"""
+
+    files_count = serializers.SerializerMethodField()
+    total_size = serializers.SerializerMethodField()
+    total_size_formatted = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -21,9 +26,35 @@ class UserSerializer(serializers.ModelSerializer):
             'is_active', 
             'is_staff',
             'is_superuser',
-            'date_joined'
+            'date_joined',
+            'files_count',
+            'total_size',
+            'total_size_formatted'
         ]
         read_only_fields = ['id', 'is_active', 'date_joined']
+    
+    def get_files_count(self, obj):
+        """Количество файлов пользователя"""
+        from file_storage.models import File
+        return File.objects.filter(owner=obj).count()
+    
+    def get_total_size(self, obj):
+        """Общий размер файлов в байтах"""
+        from file_storage.models import File
+        total = File.objects.filter(owner=obj).aggregate(total=models.Sum('size'))['total']
+        return total or 0
+    
+    def get_total_size_formatted(self, obj):
+        """Форматированный общий размер"""
+        size = self.get_total_size(obj)
+        if size == 0:
+            return '0 Б'
+        
+        for unit in ['Б', 'КБ', 'МБ', 'ГБ', 'ТБ']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} ПБ"
     
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -54,7 +85,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'last_login'
         ]
         read_only_fields = [
-            'id', 
+            'id',
+            'username',
             'storage_path', 
             'is_active', 
             'is_staff',
@@ -63,10 +95,18 @@ class UserDetailSerializer(serializers.ModelSerializer):
         ]
     
     def get_full_name(self, obj):
-        return obj.get_full_name() or obj.username
+        """Безопасное получение полного имени"""
+
+        if not obj:
+            return ''
+        
+        if hasattr(obj, 'get_full_name') and obj.get_full_name():
+            return obj.get_full_name()
+        
+        return obj.username if hasattr(obj, 'username') else ''
     
     def get_storage_url(self, obj):
-        if obj.storage_path:
+        if hasattr(obj, 'storage_path') and obj.storage_path:
             return f"/media/{obj.storage_path}"
         return None
 
@@ -194,7 +234,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
             'first_name', 
             'last_name',
         ]
-        read_only_fields = ['token']
         extra_kwargs = {
             'password': {'write_only': True},
             'email': {'required': True},
@@ -222,10 +261,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         user = User.objects.create_user(**validated_data)
-        
-        # Создаем токен
-        Token.objects.create(user=user)
-        
         return user
 
 

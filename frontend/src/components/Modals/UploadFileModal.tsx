@@ -145,7 +145,10 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
       >
         <div className={S.modalHeader}>
           <h3>Загрузить файлы</h3>
-          <button className={S.closeButton} onClick={handleClose}>✕</button>
+          <button 
+            className={S.closeButton} 
+            title='Закрыть окно' 
+            onClick={handleClose}>✕</button>
         </div>
 
         <div className={S.modalContent}>
@@ -159,6 +162,7 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
               <p>Перетащите файлы сюда или</p>
               <button
                 className={S.browseButton}
+                title='Выбрать файлы для загрузки' 
                 onClick={handleBrowseClick}
                 type="button"
               >
@@ -175,6 +179,7 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
                 <button
                   className={S.clearAllButton}
                   onClick={clearSelection}
+                  title='Очистить от выбранных файлов' 
                   type="button"
                 >
                   ✕ Очистить все
@@ -247,13 +252,17 @@ const UploadFileModal: React.FC<UploadFileModalProps> = ({
         </div>
 
         <div className={S.modalFooter}>
-          <button className={S.cancelButton} onClick={handleClose}>
+          <button 
+            className={S.cancelButton} 
+            title='Отменить действие' 
+            onClick={handleClose}>
             Отмена
           </button>
           <button
             className={S.uploadButton}
             onClick={handleUpload}
             disabled={!selectedFiles?.length}
+            title='Загрузить выбранные файлы' 
           >
             Загрузить {selectedFiles?.length ? `(${selectedFiles.length})` : ''}
           </button>

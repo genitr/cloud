@@ -6,8 +6,9 @@ import type {
   RootState,
   SharingState 
 } from '../../types';
-import { API_URL } from '../../types';
 import { getCSRFToken } from '../../utils/csrf';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const initialState: SharingState = {
   shares: [],
@@ -18,34 +19,27 @@ const initialState: SharingState = {
   totalCount: 0,
 };
 
-const getAuthHeaders = (token: string | null) => {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  
-  if (token) {
-    headers['Authorization'] = `Token ${token}`;
-  }
-  
-  // Добавляем CSRF токен
-  const csrfToken = getCSRFToken();
-  if (csrfToken) {
-    headers['X-CSRFToken'] = csrfToken;
-  }
-  
-  return headers;
+const getRequestHeaders = (multipart: boolean = false): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (!multipart) {
+        headers['Content-Type'] = 'application/json';
+    }
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+    }
+    return headers;
 };
 
 // Получить все расшаривания пользователя
 export const fetchShares = createAsyncThunk(
   'sharing/fetchAll',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState() as { auth: { token: string | null } };
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/shares/`, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -63,18 +57,38 @@ export const fetchShares = createAsyncThunk(
 // Создать расшаривание файла
 export const createShare = createAsyncThunk<
   FileSharing,
-  number,
+  number | { fileId: number; userId?: number },
   { state: RootState; rejectValue: string }
 >(
   'sharing/create',
-  async (fileId, { getState, rejectWithValue }) => {
+  async (params, { getState, rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
+      // Нормализуем параметры
+      let fileId: number;
+      let userId: number | undefined;
       
-      const response = await fetch(`${API_URL}/files/${fileId}/share/`, {
+      if (typeof params === 'number') {
+        fileId = params;
+        userId = undefined;
+      } else {
+        fileId = params.fileId;
+        userId = params.userId;
+      }
+      
+      const state = getState();
+      const isAdmin = state.auth.user?.is_staff || state.auth.user?.is_superuser;
+      
+      let url = `${API_URL}/files/${fileId}/share/`;
+      if (isAdmin && userId) {
+        url += `?user_id=${userId}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: {
+          'X-CSRFToken': getCSRFToken(),
+        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -86,7 +100,7 @@ export const createShare = createAsyncThunk<
 
       const baseApiUrl = API_URL;
       const downloadUrl = `${baseApiUrl}/public/${data.share_token}/download/`;
-      const viewUrl = `${baseApiUrl}/public/${data.share_token}/`;
+      const viewUrl = `${window.location.origin}/share/${data.share_token}`;
       
       return {
         ...data,
@@ -166,14 +180,13 @@ export const downloadPublicFile = createAsyncThunk<
 // Отозвать расшаривание
 export const revokeShare = createAsyncThunk(
   'sharing/revoke',
-  async (shareId: number, { getState, rejectWithValue }) => {
+  async (shareId: number, { rejectWithValue }) => {
     try {
-      const state = getState() as { auth: { token: string | null } };
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/shares/${shareId}/revoke/`, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {

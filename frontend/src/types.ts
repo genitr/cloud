@@ -112,8 +112,6 @@ export interface InputProps {
   required?: boolean;
 }
 
-// ==================== API ====================
-export const API_URL = '/api';
 
 // ==================== АУТЕНТИФИКАЦИЯ ====================
 export interface LoginCredentials {
@@ -147,6 +145,9 @@ export interface User {
   date_joined: string;
   last_login?: string | null;
   storage_path?: string | null;
+  files_count?: number;
+  total_size?: number;
+  total_size_formatted?: string;
 }
 
 export interface UserDetail extends User {
@@ -311,6 +312,7 @@ export interface FileFilterParams {
   folder?: number | null;
   type?: string;
   search?: string;
+  user_id?: number;
 }
 
 // ==================== РАСШАРИВАНИЕ ====================
@@ -393,10 +395,10 @@ export interface UserStats {
 // ==================== СОСТОЯНИЯ REDUX ====================
 export interface AuthState {
   user: UserDetail | null;
-  token: string | null;
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
+  // token: boolean;
 }
 
 export interface FoldersState {

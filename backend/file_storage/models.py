@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 
@@ -5,6 +6,8 @@ from django.conf import settings
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth import get_user_model
+
+logger = logging.getLogger(__name__)
 
 def user_file_upload_path(instance, filename):
     """
@@ -73,6 +76,60 @@ class Folder(models.Model):
         if self.parent_folder:
             return f"{self.parent_folder.get_full_path()}/{self.name}"
         return self.name
+    
+    def delete(self, *args, **kwargs):
+        """Рекурсивное удаление папки со всем содержимым и очистка пустых папок"""
+        
+        # Сохраняем путь к папке
+        folder_path = None
+        if hasattr(self, 'owner') and self.owner:
+            folder_path = os.path.join(settings.FILE_STORAGE_ROOT, self.get_full_path())
+        
+        # Удаляем все файлы в папке
+        for file in self.files.all():
+            file.delete()
+        
+        # Удаляем все подпапки
+        for subfolder in self.subfolders.all():
+            subfolder.delete()
+        
+        # Удаляем запись о папке из БД
+        super().delete(*args, **kwargs)
+        
+        # Удаляем физическую папку, если она пуста
+        if folder_path and os.path.exists(folder_path):
+            try:
+                if not os.listdir(folder_path):
+                    os.rmdir(folder_path)
+                    logger.info(f"Удалена пустая папка: {folder_path}")
+                    
+                    # Очищаем родительские папки
+                    self._cleanup_empty_directories(os.path.dirname(folder_path))
+            except Exception as e:
+                logger.error(f"Ошибка при удалении папки {folder_path}: {e}")
+    
+    def _cleanup_empty_directories(self, directory_path):
+        """Рекурсивно удаляет пустые директории"""
+        try:
+            if not os.path.exists(directory_path):
+                return
+            
+            storage_root = settings.FILE_STORAGE_ROOT
+            
+            # Не удаляем корневую папку
+            if directory_path == storage_root:
+                return
+            
+            if not os.listdir(directory_path):
+                os.rmdir(directory_path)
+                logger.info(f"Удалена пустая папка: {directory_path}")
+                
+                parent_dir = os.path.dirname(directory_path)
+                if parent_dir != storage_root and parent_dir.startswith(storage_root):
+                    self._cleanup_empty_directories(parent_dir)
+                    
+        except Exception as e:
+            logger.error(f"Ошибка при удалении папки {directory_path}: {e}")
 
 
 class File(models.Model):
@@ -182,6 +239,53 @@ class File(models.Model):
                     self.content_type = mimetypes.guess_type(self.file.name)[0] or 'application/octet-stream'
         
         super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        """Удаление файла с диска и очистка пустых папок"""
+        file_path = None
+        
+        # Сохраняем путь к файлу перед удалением
+        if self.file and os.path.isfile(self.file.path):
+            file_path = self.file.path
+        
+        # Удаляем запись из БД
+        super().delete(*args, **kwargs)
+        
+        # Удаляем физический файл и пустые папки
+        if file_path:
+            try:
+                # Удаляем файл
+                os.remove(file_path)
+                logger.info(f"Физический файл удален: {file_path}")
+                
+                # Удаляем пустые родительские папки
+                self._cleanup_empty_directories(os.path.dirname(file_path))
+                
+            except Exception as e:
+                logger.error(f"Ошибка при удалении файла {file_path}: {e}")
+    
+    def _cleanup_empty_directories(self, directory_path):
+        """Рекурсивно удаляет пустые директории"""
+        try:
+            # Проверяем, существует ли директория
+            if not os.path.exists(directory_path):
+                return
+            
+            # Проверяем, пуста ли директория
+            if not os.listdir(directory_path):
+                os.rmdir(directory_path)
+                logger.info(f"Удалена пустая папка: {directory_path}")
+                
+                # Рекурсивно проверяем родительскую папку
+                parent_dir = os.path.dirname(directory_path)
+                
+                # Не удаляем корневую папку storage
+                storage_root = settings.FILE_STORAGE_ROOT
+                if parent_dir != storage_root and parent_dir.startswith(storage_root):
+                    self._cleanup_empty_directories(parent_dir)
+                    
+        except Exception as e:
+            logger.error(f"Ошибка при удалении папки {directory_path}: {e}")
     
     def get_logical_path(self):
         """Логический путь с учетом папок"""

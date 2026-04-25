@@ -8,7 +8,9 @@ import type {
   FoldersState,
   RootState,
 } from '../../types';
-import { API_URL } from '../../types';
+import { getCSRFToken } from '../../utils/csrf';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const selectFolderFileCount = (state: RootState, folderId: number) => {
   const { folders } = state.folders;
@@ -49,30 +51,38 @@ const initialState: FoldersState = {
   totalCount: 0,
 };
 
-const getAuthHeaders = (token: string | null): HeadersInit => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Token ${token}`;
-  }
-  return headers;
+const getRequestHeaders = (multipart: boolean = false): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (!multipart) {
+        headers['Content-Type'] = 'application/json';
+    }
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+    }
+    return headers;
 };
 
 // Получить все папки
 export const fetchFolders = createAsyncThunk<
   Folder[],
-  void,
+  { userId?: number } | void,
   { state: RootState; rejectValue: string }
 >(
   'folders/fetchAll',
-  async (_, { getState, rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
-      const response = await fetch(`${API_URL}/folders/`, {
-        headers: getAuthHeaders(token),
+      let url = `${API_URL}/folders/`;
+
+      if (params && params.userId) {
+        url += `?user_id=${params.userId}`;
+        console.log('Запрос папок для user_id:', params.userId);
+      }
+
+      const response = await fetch(url, {
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -94,13 +104,12 @@ export const fetchFolderTree = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >(
   'folders/fetchTree',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/folders/tree/`, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -122,13 +131,12 @@ export const fetchFolderContents = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >(
   'folders/fetchContents',
-  async (folderId, { getState, rejectWithValue }) => {
+  async (folderId, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/folders/${folderId}/contents/`, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -150,14 +158,13 @@ export const createFolder = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >(
   'folders/create',
-  async (folderData, { getState, rejectWithValue }) => {
+  async (folderData, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/folders/`, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
         body: JSON.stringify(folderData),
       });
 
@@ -177,18 +184,24 @@ export const createFolder = createAsyncThunk<
 // Обновить папку
 export const updateFolder = createAsyncThunk<
   Folder,
-  { id: number; data: Partial<FolderCreate> },
+  { id: number; data: Partial<FolderCreate>; userId?: number },
   { state: RootState; rejectValue: string }
 >(
   'folders/update',
-  async ({ id, data }, { getState, rejectWithValue }) => {
+  async ({ id, data, userId }, { getState, rejectWithValue }) => {
     try {
       const state = getState();
-      const token = state.auth.token;
-
-      const response = await fetch(`${API_URL}/folders/${id}/`, {
+      const isAdmin = state.auth.user?.is_staff || state.auth.user?.is_superuser;
+      
+      let url = `${API_URL}/folders/${id}/`;
+      if (isAdmin && userId) {
+        url += `?user_id=${userId}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'PATCH',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
@@ -208,18 +221,36 @@ export const updateFolder = createAsyncThunk<
 // Удалить папку
 export const deleteFolder = createAsyncThunk<
   number,
-  number,
+  number | { folderId: number; userId?: number },
   { state: RootState; rejectValue: string }
 >(
   'folders/delete',
-  async (folderId, { getState, rejectWithValue }) => {
+  async (params, { getState, rejectWithValue }) => {
     try {
+      // Нормализуем параметры
+      let folderId: number;
+      let userId: number | undefined;
+      
+      if (typeof params === 'number') {
+        folderId = params;
+        userId = undefined;
+      } else {
+        folderId = params.folderId;
+        userId = params.userId;
+      }
+      
       const state = getState();
-      const token = state.auth.token;
-
-      const response = await fetch(`${API_URL}/folders/${folderId}/`, {
+      const isAdmin = state.auth.user?.is_staff || state.auth.user?.is_superuser;
+      
+      let url = `${API_URL}/folders/${folderId}/`;
+      if (isAdmin && userId) {
+        url += `?user_id=${userId}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'DELETE',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {

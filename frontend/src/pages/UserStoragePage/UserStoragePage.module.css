@@ -1,0 +1,147 @@
+.mainLayout {
+    display: flex;
+    height: 80vh;
+    border-radius: 15px;
+}
+
+.contentArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.header {
+    padding: 16px 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    background: #374263;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: 5px;
+}
+
+.backButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #e6dcff;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.backButton:hover {
+    background: #ccd0d462;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #e6dcff;
+}
+
+.breadcrumbsWrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 24px;
+    background: #374263;
+    margin-left: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.breadcrumb {
+    background: none;
+    border: none;
+    color: #e6dcff;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.breadcrumb:hover {
+    text-decoration: underline;
+}
+
+.separator {
+    color: #999;
+    margin: 0 4px;
+}
+
+.upButton {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.upButton:hover {
+    background-color: #e0e0e0;
+}
+
+.fileListWrapper {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    margin-left: 5px;
+    background: #374263;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+
+/* Индикатор скролла */
+.fileListWrapper::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to top, #f5f5f5, transparent);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 18px;
+    color: #666;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .mainLayout {
+    flex-direction: column;
+  }
+  
+  .contentArea {
+    height: auto;
+    min-height: calc(100vh - 80px - 280px);
+  }
+  
+  .toolbarWrapper {
+    padding: 15px;
+  }
+  
+  .fileListWrapper {
+    padding: 0 15px 15px 15px;
+    border-radius: 0;
+  }
+}

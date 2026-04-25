@@ -20,8 +20,7 @@ class FolderAdmin(admin.ModelAdmin):
 class FileAdmin(admin.ModelAdmin):
     list_display = [
         'name', 
-        'id', 
-        'file', 
+        'id',
         'folder', 
         'owner', 
         'size', 

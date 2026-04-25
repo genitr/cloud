@@ -7,7 +7,6 @@
 - **Django REST Framework** - построение API
 - **PostgreSQL** - база данных
 - **Gunicorn** - WSGI сервер
-- **JWT / Token Authentication** - аутентификация
 - **django-cors-headers** - CORS поддержка
 
 
@@ -20,15 +19,11 @@
 git clone https://github.com/genitr/cloud.git
 cd cloud/backend
 
-# Виртуальное окружение
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate  # Windows
-
 # Установка зависимостей
 pip install -r requirements.txt
 
 # Применение миграций
+python manage.py makemigrations
 python manage.py migrate
 
 # Создание суперпользователя
@@ -43,6 +38,8 @@ DEBUG
 ALLOWED_HOSTS
 CORS_ALLOW_ALL
 CORS_ALLOWED_ORIGINS
+CSRF_COOKIE_SECURE
+SESSION_COOKIE_SECURE
 DB_USER
 DB_PASS
 DB_HOST

@@ -8,7 +8,7 @@ const Footer = () => {
           © {new Date().getFullYear()} Все права защищены.
         </div>
         <div className={S.links}>
-          <a href="#" className={S.link}>GitHub</a>
+          <a href="https://github.com/genitr/cloud" className={S.link}>GitHub</a>
         </div>
       </div>
     </footer>

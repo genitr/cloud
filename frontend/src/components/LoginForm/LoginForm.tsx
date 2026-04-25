@@ -57,8 +57,7 @@ const LoginForm: React.FC = () => {
     };
 
     const result = await dispatch(login(loginData));
-    
-    // Успешный вход - редирект произойдет в useEffect
+
     if (login.fulfilled.match(result)) {
       return { success: true };
     } else {

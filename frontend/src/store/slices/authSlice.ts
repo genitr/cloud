@@ -6,18 +6,90 @@ import type {
   RegisterResponse,
   AuthState, 
   UserDetail,
-  RootState
 } from '../../types';
-import { API_URL } from '../../types';
 import { getCSRFToken } from '../../utils/csrf';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem('auth_token'),
   isLoading: false,
   error: null,
-  isAuthenticated: !!localStorage.getItem('auth_token'),
+  isAuthenticated: false,
 };
+
+// Проверка аутентификации
+export const checkAuth = createAsyncThunk<
+  UserDetail | null,
+  void,
+  { rejectValue: string }
+>(
+  'auth/checkAuth',
+  async () => {
+    try {
+      console.log('🔍 Проверка аутентификации...');
+      
+      const response = await fetch(`${API_URL}/users/me/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      console.log('📡 Ответ от /users/me/:', response.status);
+
+      if (!response.ok) {
+        if (response.status === 403 || response.status === 401) {
+          console.log('❌ Пользователь не авторизован');
+          return null;
+        }
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data: UserDetail = await response.json();
+      
+      if (!data || !data.username) {
+        console.error('❌ Некорректный ответ сервера: нет username');
+        return null;
+      }
+      
+      console.log('✅ Пользователь авторизован:', data.username);
+      return data;
+    } catch (error) {
+      console.error('❌ Ошибка проверки аутентификации:', error);
+      return null;
+    }
+  }
+);
+
+export const fetchCurrentUser = createAsyncThunk<
+  UserDetail,
+  void,
+  { rejectValue: string }
+>(
+  'auth/fetchCurrentUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_URL}/users/me/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки профиля');
+      }
+
+      const data: UserDetail = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue('Ошибка при загрузке профиля: ' + error);
+    }
+  }
+);
 
 export const register = createAsyncThunk<
   RegisterResponse,
@@ -33,6 +105,7 @@ export const register = createAsyncThunk<
           'Content-Type': 'application/json',
           'X-CSRFToken': getCSRFToken(),
         },
+        credentials: 'include',
         body: JSON.stringify({
           username: userData.login,
           email: userData.email,
@@ -41,7 +114,6 @@ export const register = createAsyncThunk<
           first_name: userData.firstName,
           last_name: userData.lastName,
         }),
-        credentials: 'include',
       });
 
       const data = await response.json();
@@ -52,7 +124,7 @@ export const register = createAsyncThunk<
 
       return data;
     } catch (error) {
-      return rejectWithValue('Ошибка сети при регистрации: ' + error);
+      return rejectWithValue('Ошибка сети при регистрации :' + error);
     }
   }
 );
@@ -63,7 +135,7 @@ export const login = createAsyncThunk<
   { rejectValue: string }
 >(
   'auth/login',
-  async (credentials, { rejectWithValue }) => {
+  async (credentials, { rejectWithValue, dispatch }) => {
     try {
       const response = await fetch(`${API_URL}/users/login/`, {
         method: 'POST',
@@ -71,11 +143,11 @@ export const login = createAsyncThunk<
           'Content-Type': 'application/json',
           'X-CSRFToken': getCSRFToken(),
         },
+        credentials: 'include',
         body: JSON.stringify({
           username: credentials.login,
           password: credentials.password,
         }),
-        credentials: 'include',
       });
 
       const data = await response.json();
@@ -84,40 +156,12 @@ export const login = createAsyncThunk<
         return rejectWithValue(data.error || data.message || 'Ошибка входа');
       }
 
+      // После успешного входа получаем данные пользователя
+      await dispatch(checkAuth());
+      
       return data;
     } catch (error) {
-      return rejectWithValue('Ошибка сети при входе: ' + error);
-    }
-  }
-);
-
-// Получить текущего пользователя
-export const fetchCurrentUser = createAsyncThunk<
-  UserDetail,
-  void,
-  { state: RootState; rejectValue: string }
->(
-  'auth/fetchCurrentUser',
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const state = getState();
-      const token = state.auth.token;
-
-      const response = await fetch(`${API_URL}/users/me/`, {
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Ошибка загрузки профиля');
-      }
-
-      const data: UserDetail = await response.json();
-      return data;
-    } catch (error) {
-      return rejectWithValue('Ошибка при загрузке профиля: ' + error);
+      return rejectWithValue('Ошибка сети при входе :' + error);
     }
   }
 );
@@ -125,28 +169,25 @@ export const fetchCurrentUser = createAsyncThunk<
 export const logout = createAsyncThunk<
   void,
   void,
-  { state: RootState; rejectValue: string }
+  { rejectValue: string }
 >(
   'auth/logout',
-  async (_, { getState }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
+      const response = await fetch(`${API_URL}/users/logout/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCSRFToken(),
+        },
+        credentials: 'include',
+      });
 
-      if (token) {
-        const response = await fetch(`${API_URL}/users/logout/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Token ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          console.warn('Ошибка при выходе на сервере');
-        }
+      if (!response.ok) {
+        console.warn('Ошибка при выходе на сервере');
       }
     } catch (error) {
-      console.error('Ошибка сети при выходе из системы:', error);
+      console.error('Ошибка сети при выходе :' + error);
+      return rejectWithValue('Ошибка при выходе');
     }
   }
 );
@@ -160,21 +201,56 @@ const authSlice = createSlice({
     },
     logoutLocal: (state) => {
       state.user = null;
-      state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('auth_token');
     },
   },
   extraReducers: (builder) => {
     builder
+      // Check Auth
+      .addCase(checkAuth.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(checkAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload && action.payload.username) {
+          state.user = action.payload;
+          state.isAuthenticated = true;
+          console.log('✅ Состояние обновлено: пользователь', action.payload.username);
+        } else {
+          state.user = null;
+          state.isAuthenticated = false;
+          console.log('❌ Нет данных пользователя, аутентификация сброшена');
+        }
+      })
+      .addCase(checkAuth.rejected, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+      })
+
+      // Fetch current user
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(fetchCurrentUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || 'Ошибка загрузки профиля';
+      })
+      
       // Register
       .addCase(register.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(register.fulfilled, (state, action) => {
+      .addCase(register.fulfilled, (state) => {
         state.isLoading = false;
-        state.user = action.payload.user;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -186,29 +262,12 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action) => {
+      .addCase(login.fulfilled, (state) => {
         state.isLoading = false;
-        state.user = action.payload.data.user;
-        state.token = action.payload.data.token;
-        state.isAuthenticated = true;
-        localStorage.setItem('auth_token', action.payload.data.token);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || 'Ошибка входа';
-      })
-      
-      .addCase(fetchCurrentUser.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-      })
-      .addCase(fetchCurrentUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload || 'Ошибка загрузки профиля';
       })
       
       // Logout
@@ -217,17 +276,13 @@ const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
-        state.token = null;
         state.isAuthenticated = false;
         state.isLoading = false;
-        localStorage.removeItem('auth_token');
       })
       .addCase(logout.rejected, (state) => {
         state.user = null;
-        state.token = null;
         state.isAuthenticated = false;
         state.isLoading = false;
-        localStorage.removeItem('auth_token');
       });
   },
 });

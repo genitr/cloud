@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
-import styles from './Modals.module.css';
+import S from './Modals.module.css';
 import type { ShareModalProps } from '../../types';
 import Icon from '../ui/Icon/Icon';
 import { copyToClipboard } from '../../utils/clipboard';
 
-const ShareModal: React.FC<ShareModalProps> = ({ 
-  isOpen, 
-  onClose, 
+const ShareModal: React.FC<ShareModalProps> = ({
+  isOpen,
+  onClose,
   itemName,
   shareUrl,
   viewUrl,
 }) => {
   const [copied, setCopied] = useState<'download' | 'view' | null>(null);
-  
+
   if (!isOpen) return null;
-  
+
   const handleCopyLink = async (url: string, type: 'download' | 'view') => {
     const success = await copyToClipboard(url);
-    
+
     if (success) {
       setCopied(type);
       setTimeout(() => setCopied(null), 2000);
@@ -33,97 +33,103 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div 
-        className={`${styles.modal} ${styles.shareModal}`} 
+    <div className={S.modalOverlay} onClick={onClose}>
+      <div
+        className={`${S.modal} ${S.shareModal}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={styles.modalHeader}>
+        <div className={S.modalHeader}>
           <h3>Поделиться файлом</h3>
-          <button className={styles.closeButton} onClick={onClose}>✕</button>
+          <button
+            className={S.closeButton}
+            title='Закрыть окно'
+            onClick={onClose}>✕</button>
         </div>
-        
-        <div className={styles.modalContent}>
-          <div className={styles.fileInfo}>
-            <div className={styles.fileIcon}><Icon name='file' size={24} /></div>
-            <div className={styles.fileDetails}>
-              <div className={styles.fileName}>{itemName}</div>
+
+        <div className={S.modalContent}>
+          <div className={S.fileInfo}>
+            <div className={S.fileIcon}><Icon name='file' size={32} /></div>
+            <div className={S.fileDetails}>
+              <div className={S.fileName}>{itemName}</div>
             </div>
           </div>
 
           {/* Ссылка для скачивания */}
-          <div className={styles.linkSection}>
-            <div className={styles.linkLabel}>
-              <span className={styles.linkIcon}><Icon name='download' size={16} /></span>
+          <div className={S.linkSection}>
+            <div className={S.linkLabel}>
+              <span className={S.linkIcon}><Icon name='download' size={16} /></span>
               Ссылка для скачивания:
             </div>
-            <div className={styles.linkBox}>
-              <input 
-                type="text" 
-                readOnly 
+            <div className={S.linkBox}>
+              <input
+                type="text"
+                readOnly
                 value={shareUrl || ''}
-                className={styles.linkInput}
+                className={S.linkInput}
                 onClick={(e) => e.currentTarget.select()}
               />
-              <button 
-                className={`${styles.copyButton} ${copied === 'download' ? styles.copied : ''}`} 
+              <button
+                className={`${S.copyButton} ${copied === 'download' ? S.copied : ''}`}
                 onClick={() => handleCopyLink(shareUrl || '', 'download')}
                 title="Копировать ссылку"
               >
-                {copied === 'download' ? '✓' : <Icon name='clipboard' size={20} />}
+                {copied === 'download' ? <Icon name='linkCopied' /> : <Icon name='linkCopy' />}
               </button>
-              <button 
-                className={styles.testButton}
+              <button
+                className={S.testButton}
                 onClick={() => handleTestLink(shareUrl || '')}
                 title="Открыть в новой вкладке"
               >
-                <Icon name='link' size={16} />
+                <Icon name='link' />
               </button>
             </div>
-            <div className={styles.linkHint}>
+            <div className={S.linkHint}>
               Прямая ссылка на скачивание файла
             </div>
           </div>
 
           {/* Ссылка для просмотра информации */}
           {viewUrl && (
-            <div className={styles.linkSection}>
-              <div className={styles.linkLabel}>
-                <span className={styles.linkIcon}><Icon name='eye' size={18} /></span>
+            <div className={S.linkSection}>
+              <div className={S.linkLabel}>
+                <span className={S.linkIcon}><Icon name='eye' size={18} /></span>
                 Ссылка для просмотра:
               </div>
-              <div className={styles.linkBox}>
-                <input 
-                  type="text" 
-                  readOnly 
+              <div className={S.linkBox}>
+                <input
+                  type="text"
+                  readOnly
                   value={viewUrl}
-                  className={styles.linkInput}
+                  className={S.linkInput}
                   onClick={(e) => e.currentTarget.select()}
                 />
-                <button 
-                  className={`${styles.copyButton} ${copied === 'view' ? styles.copied : ''}`} 
+                <button
+                  className={`${S.copyButton} ${copied === 'view' ? S.copied : ''}`}
                   onClick={() => handleCopyLink(viewUrl, 'view')}
                   title="Копировать ссылку"
                 >
-                  {copied === 'view' ? '✓' : <Icon name='clipboard' size={20} />}
+                  {copied === 'view' ? <Icon name='linkCopied' /> : <Icon name='linkCopy' />}
                 </button>
-                <button 
-                  className={styles.testButton}
+                <button
+                  className={S.testButton}
                   onClick={() => handleTestLink(viewUrl)}
                   title="Открыть в новой вкладке"
                 >
-                  <Icon name='link' size={16} />
+                  <Icon name='link' />
                 </button>
               </div>
-              <div className={styles.linkHint}>
+              <div className={S.linkHint}>
                 Страница с информацией о файле
               </div>
             </div>
           )}
         </div>
-        
-        <div className={styles.modalFooter}>
-          <button className={styles.closeButton} onClick={onClose}>
+
+        <div className={S.modalFooter}>
+          <button
+            className={S.cancelButton}
+            title='Закрыть окно'
+            onClick={onClose}>
             Закрыть
           </button>
         </div>

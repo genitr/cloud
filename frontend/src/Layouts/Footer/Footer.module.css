@@ -14,7 +14,7 @@
 }
 
 .copyright {
-  color: var(--color-text-muted);
+  color: #e6dcff;
   font-size: 0.875rem;
   text-align: center;
 }
@@ -27,13 +27,13 @@
 }
 
 .link {
-  color: var(--color-text-secondary);
+  color: #e6dcff;
   font-size: 0.875rem;
   transition: color var(--transition-fast);
 }
 
 .link:hover {
-  color: var(--color-primary);
+  color: #cec4e5;
 }
 
 @media (min-width: 768px) {

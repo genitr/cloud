@@ -8,7 +8,9 @@ import type {
   UsersState,
   RootState
 } from '../../types';
-import { API_URL } from '../../types';
+import { getCSRFToken } from '../../utils/csrf';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const initialState: UsersState = {
   users: [],
@@ -21,14 +23,16 @@ const initialState: UsersState = {
   totalCount: 0,
 };
 
-const getAuthHeaders = (token: string | null): HeadersInit => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Token ${token}`;
-  }
-  return headers;
+const getRequestHeaders = (multipart: boolean = false): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (!multipart) {
+        headers['Content-Type'] = 'application/json';
+    }
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+    }
+    return headers;
 };
 
 // Типы для ответов
@@ -37,16 +41,15 @@ interface ToggleActiveResponse {
   isActive: boolean;
 }
 
-// Получить всех пользователей (только для админов)
+// Получить всех пользователей
 export const fetchUsers = createAsyncThunk<User[], void, { state: RootState }>(
   'users/fetchAll',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/`, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -64,13 +67,12 @@ export const fetchUsers = createAsyncThunk<User[], void, { state: RootState }>(
 // Получить информацию о текущем пользователе
 export const fetchCurrentUser = createAsyncThunk<UserDetail, void, { state: RootState }>(
   'users/fetchCurrent',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/me/`, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -88,14 +90,13 @@ export const fetchCurrentUser = createAsyncThunk<UserDetail, void, { state: Root
 // Обновить профиль пользователя
 export const updateUserProfile = createAsyncThunk<UserDetail, Partial<UserDetail>, { state: RootState }>(
   'users/updateProfile',
-  async (userData, { getState, rejectWithValue }) => {
+  async (userData, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/me/`, {
         method: 'PATCH',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
         body: JSON.stringify(userData),
       });
 
@@ -115,13 +116,12 @@ export const updateUserProfile = createAsyncThunk<UserDetail, Partial<UserDetail
 // Получить информацию о хранилище
 export const fetchStorageInfo = createAsyncThunk<StorageInfo, number, { state: RootState }>(
   'users/fetchStorage',
-  async (userId: number, { getState, rejectWithValue }) => {
+  async (userId: number, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/${userId}/storage/`, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -136,16 +136,15 @@ export const fetchStorageInfo = createAsyncThunk<StorageInfo, number, { state: R
   }
 );
 
-// Получить статистику пользователей (только для админов)
+// Получить статистику пользователей
 export const fetchUserStats = createAsyncThunk<UserStats, void, { state: RootState }>(
   'users/fetchStats',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/stats/`, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -163,14 +162,13 @@ export const fetchUserStats = createAsyncThunk<UserStats, void, { state: RootSta
 // Админские действия
 export const toggleUserActive = createAsyncThunk<ToggleActiveResponse, number, { state: RootState }>(
   'users/toggleActive',
-  async (userId: number, { getState, rejectWithValue }) => {
+  async (userId: number, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/${userId}/toggle_active/`, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -188,14 +186,13 @@ export const toggleUserActive = createAsyncThunk<ToggleActiveResponse, number, {
 
 export const makeAdmin = createAsyncThunk<number, number, { state: RootState }>(
   'users/makeAdmin',
-  async (userId: number, { getState, rejectWithValue }) => {
+  async (userId: number, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/${userId}/make_admin/`, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -212,14 +209,13 @@ export const makeAdmin = createAsyncThunk<number, number, { state: RootState }>(
 
 export const removeAdmin = createAsyncThunk<number, number, { state: RootState }>(
   'users/removeAdmin',
-  async (userId: number, { getState, rejectWithValue }) => {
+  async (userId: number, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/${userId}/remove_admin/`, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -236,14 +232,13 @@ export const removeAdmin = createAsyncThunk<number, number, { state: RootState }
 
 export const deleteUser = createAsyncThunk<number, number, { state: RootState }>(
   'users/delete',
-  async (userId: number, { getState, rejectWithValue }) => {
+  async (userId: number, { rejectWithValue }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const response = await fetch(`${API_URL}/users/${userId}/`, {
         method: 'DELETE',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {

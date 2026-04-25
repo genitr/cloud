@@ -10,14 +10,14 @@
   border: none;
   outline: none;
   font-family: inherit;
-  background: rgb(151, 151, 151);
-  color: white;
+  background: rgb(255, 255, 255);
+  color: rgb(118, 118, 118);
 }
 
 .button:hover:not(:disabled) {
-  background: rgb(180, 174, 174);
   transform: translateY(-1px);
   box-shadow: rgb(74, 74, 74);
+  color: rgb(41, 41, 41);
 }
 
 .button:focus-visible {

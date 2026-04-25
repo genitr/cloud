@@ -6,8 +6,11 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: #374263;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-left: 5px;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
 }
 
 .leftButtons {
@@ -18,21 +21,6 @@
 .rightButtons {
   display: flex;
   gap: 10px;
-}
-
-.navButton {
-  padding: 8px 16px;
-  background: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.2s;
-}
-
-.navButton:hover {
-  background: #5a6268;
 }
 
 .primaryButton {
@@ -63,4 +51,44 @@
 
 .secondaryButton:hover {
   background: #218838;
+}
+
+@media (max-width: 640px) {
+  .toolbar {
+    display: flex;
+    position: sticky;
+    flex: 1;
+    top: 0;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+    background: none;
+    border: none;
+    margin-left: 0p;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .primaryButton {
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0;
+  }
+
+  .primaryButton:hover {
+    background: none;
+  }
+
+  .secondaryButton {
+    padding: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 0;
+  }
+
+  .secondaryButton:hover {
+    background: none;
+  }
 }

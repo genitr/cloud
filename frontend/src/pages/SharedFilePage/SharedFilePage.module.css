@@ -1,7 +1,5 @@
-/* pages/SharedFilePage/SharedFilePage.module.css */
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,7 +40,7 @@
 
 .fileIcon {
   font-size: 64px;
-  background: white;
+  background: #424e74;
   width: 80px;
   height: 80px;
   border-radius: 20px;
@@ -54,6 +52,7 @@
 
 .fileTitle {
   flex: 1;
+  flex-direction: row;
 }
 
 .fileTitle h1 {
@@ -79,7 +78,7 @@
 }
 
 .fileType {
-  background: #6c757d;
+  background: #374263;
   color: white;
   padding: 4px 12px;
   border-radius: 20px;
@@ -120,6 +119,23 @@
   color: #333;
   font-weight: 500;
   word-break: break-word;
+}
+
+.linkInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 13px;
+  color: #e6dcff;
+  background: #4e5b85;
+  font-family: monospace;
+}
+
+.linkInput:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
 }
 
 .actions {
@@ -287,14 +303,14 @@
     text-align: center;
     padding: 20px;
   }
-  
-  .actions {
-    flex-direction: column;
-  }
-  
+
   .footer {
     flex-direction: column;
     gap: 10px;
     text-align: center;
+  }
+
+  .infoItem {
+    flex-direction: row;
   }
 }

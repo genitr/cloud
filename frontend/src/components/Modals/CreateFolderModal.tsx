@@ -32,7 +32,10 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
       <div className={S.modal} onClick={(e) => e.stopPropagation()}>
         <div className={S.modalHeader}>
           <h3>Создать новую папку</h3>
-          <button className={S.closeButton} onClick={onClose}>✕</button>
+          <button 
+            className={S.closeButton} 
+            title='Закрыть окно' 
+            onClick={onClose}>✕</button>
         </div>
         
         <div className={S.modalContent}>
@@ -50,11 +53,15 @@ const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
         </div>
         
         <div className={S.modalFooter}>
-          <button className={S.cancelButton} onClick={onClose}>
+          <button 
+            className={S.cancelButton} 
+            title='Отменить действие' 
+            onClick={onClose}>
             Отмена
           </button>
           <button 
             className={S.createButton} 
+            title='Создать новую папку' 
             onClick={handleCreate}
             disabled={!folderName.trim()}
           >

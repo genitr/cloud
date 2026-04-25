@@ -8,7 +8,9 @@ import type {
   RootState,
   UploadFileData
 } from '../../types';
-import { API_URL } from '../../types';
+import { getCSRFToken } from '../../utils/csrf';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const initialState: FilesState = {
   files: [],
@@ -24,15 +26,16 @@ const initialState: FilesState = {
   },
 };
 
-const getAuthHeaders = (token: string | null, multipart: boolean = false): HeadersInit => {
-  const headers: HeadersInit = {};
-  if (!multipart) {
-    headers['Content-Type'] = 'application/json';
-  }
-  if (token) {
-    headers['Authorization'] = `Token ${token}`;
-  }
-  return headers;
+const getRequestHeaders = (multipart: boolean = false): HeadersInit => {
+    const headers: HeadersInit = {};
+    if (!multipart) {
+        headers['Content-Type'] = 'application/json';
+    }
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+    }
+    return headers;
 };
 
 export const fetchFiles = createAsyncThunk<
@@ -43,8 +46,13 @@ export const fetchFiles = createAsyncThunk<
   'files/fetchAll',
   async (filters, { getState, rejectWithValue }) => {
     try {
+
       const state = getState();
-      const token = state.auth.token;
+      
+      // Проверяем авторизацию перед запросом
+      if (!state.auth.isAuthenticated) {
+        return rejectWithValue('Не авторизован');
+      }
 
       const params = new URLSearchParams();
       if (filters.folder !== undefined && filters.folder !== null) {
@@ -52,11 +60,16 @@ export const fetchFiles = createAsyncThunk<
       }
       if (filters.type) params.append('type', filters.type);
       if (filters.search) params.append('search', filters.search);
+      if (filters.user_id) {
+        params.append('user_id', String(filters.user_id));
+        console.log('Запрос файлов для user_id:', filters.user_id);
+      }
 
       const url = `${API_URL}/files/${params.toString() ? `?${params}` : ''}`;
 
       const response = await fetch(url, {
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -66,6 +79,9 @@ export const fetchFiles = createAsyncThunk<
       const data: FileListItem[] = await response.json();
       return data;
     } catch (error) {
+      if (error instanceof Response && error.status === 403) {
+        return rejectWithValue('Сессия истекла');
+      }
       return rejectWithValue('Ошибка при загрузке файлов: ' + error);
     }
   }
@@ -74,17 +90,35 @@ export const fetchFiles = createAsyncThunk<
 // Получить детали файла
 export const fetchFileDetails = createAsyncThunk<
   FileItem,
-  number,
+  number | { fileId: number; userId?: number },
   { state: RootState; rejectValue: string }
 >(
   'files/fetchDetails',
-  async (fileId, { getState, rejectWithValue }) => {
+  async (params, { getState, rejectWithValue }) => {
     try {
+      // Нормализуем параметры
+      let fileId: number;
+      let userId: number | undefined;
+      
+      if (typeof params === 'number') {
+        fileId = params;
+        userId = undefined;
+      } else {
+        fileId = params.fileId;
+        userId = params.userId;
+      }
+      
       const state = getState();
-      const token = state.auth.token;
-
-      const response = await fetch(`${API_URL}/files/${fileId}/`, {
-        headers: getAuthHeaders(token),
+      const isAdmin = state.auth.user?.is_staff || state.auth.user?.is_superuser;
+      
+      let url = `${API_URL}/files/${fileId}/`;
+      if (isAdmin && userId) {
+        url += `?user_id=${userId}`;
+      }
+      
+      const response = await fetch(url, {
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -106,10 +140,8 @@ export const uploadFile = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >(
   'files/upload',
-  async (fileData, { getState, rejectWithValue, dispatch }) => {
+  async (fileData, { rejectWithValue, dispatch }) => {
     try {
-      const state = getState();
-      const token = state.auth.token;
 
       const formData = new FormData();
       formData.append('file', fileData.file);
@@ -129,7 +161,10 @@ export const uploadFile = createAsyncThunk<
 
       const response = await fetch(`${API_URL}/files/`, {
         method: 'POST',
-        headers: getAuthHeaders(token, true),
+        headers: {
+            'X-CSRFToken': getCSRFToken(),  // Только CSRF, без Content-Type
+        },
+        credentials: 'include',
         body: formData,
       });
 
@@ -153,18 +188,36 @@ export const uploadFile = createAsyncThunk<
 // Скачать файл
 export const downloadFile = createAsyncThunk<
   { fileId: number; originalName: string },
-  number,
+  number | { fileId: number; userId?: number }, 
   { state: RootState; rejectValue: string }
 >(
   'files/download',
-  async (fileId, { getState, rejectWithValue }) => {
+  async (params, { getState, rejectWithValue }) => {
     try {
+      // Нормализуем параметры
+      let fileId: number;
+      let userId: number | undefined;
+      
+      if (typeof params === 'number') {
+        fileId = params;
+        userId = undefined;
+      } else {
+        fileId = params.fileId;
+        userId = params.userId;
+      }
+      
       const state = getState();
-      const token = state.auth.token;
-
+      const isAdmin = state.auth.user?.is_staff || state.auth.user?.is_superuser;
+      
       // Сначала получаем информацию о файле
-      const infoResponse = await fetch(`${API_URL}/files/${fileId}/`, {
-        headers: getAuthHeaders(token),
+      let infoUrl = `${API_URL}/files/${fileId}/`;
+      if (isAdmin && userId) {
+        infoUrl += `?user_id=${userId}`;
+      }
+      
+      const infoResponse = await fetch(infoUrl, {
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
       
       if (!infoResponse.ok) {
@@ -175,8 +228,14 @@ export const downloadFile = createAsyncThunk<
       const originalName = fileInfo.original_name || fileInfo.name;
 
       // Затем скачиваем файл
-      const downloadResponse = await fetch(`${API_URL}/files/${fileId}/download/`, {
-        headers: getAuthHeaders(token),
+      let downloadUrl = `${API_URL}/files/${fileId}/download/`;
+      if (isAdmin && userId) {
+        downloadUrl += `?user_id=${userId}`;
+      }
+      
+      const downloadResponse = await fetch(downloadUrl, {
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!downloadResponse.ok) {
@@ -204,18 +263,24 @@ export const downloadFile = createAsyncThunk<
 // Обновить информацию о файле
 export const updateFile = createAsyncThunk<
   FileItem,
-  { id: number; data: Partial<FileItem> },
+  { id: number; data: Partial<FileItem>; userId?: number },
   { state: RootState; rejectValue: string }
 >(
   'files/update',
-  async ({ id, data }, { getState, rejectWithValue, dispatch }) => {
+  async ({ id, data, userId }, { getState, rejectWithValue, dispatch }) => {
     try {
       const state = getState();
-      const token = state.auth.token;
-
-      const response = await fetch(`${API_URL}/files/${id}/`, {
+      const isAdmin = state.auth.user?.is_staff || state.auth.user?.is_superuser;
+      
+      let url = `${API_URL}/files/${id}/`;
+      if (isAdmin && userId) {
+        url += `?user_id=${userId}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'PATCH',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
@@ -226,8 +291,8 @@ export const updateFile = createAsyncThunk<
 
       const updatedFile: FileItem = await response.json();
       
-      // После успешного обновления обновляем список файлов
-      await dispatch(fetchFiles({}));
+      // Обновляем список файлов (с user_id если он был)
+      await dispatch(fetchFiles({ user_id: userId }));
       
       return updatedFile;
     } catch (error) {
@@ -239,18 +304,36 @@ export const updateFile = createAsyncThunk<
 // Удалить файл
 export const deleteFile = createAsyncThunk<
   number,
-  number,
+  number | { fileId: number; userId?: number },
   { state: RootState; rejectValue: string }
 >(
   'files/delete',
-  async (fileId, { getState, rejectWithValue }) => {
+  async (params, { getState, rejectWithValue }) => {
     try {
+      // Нормализуем параметры
+      let fileId: number;
+      let userId: number | undefined;
+      
+      if (typeof params === 'number') {
+        fileId = params;
+        userId = undefined;
+      } else {
+        fileId = params.fileId;
+        userId = params.userId;
+      }
+      
       const state = getState();
-      const token = state.auth.token;
-
-      const response = await fetch(`${API_URL}/files/${fileId}/`, {
+      const isAdmin = state.auth.user?.is_staff || state.auth.user?.is_superuser;
+      
+      let url = `${API_URL}/files/${fileId}/`;
+      if (isAdmin && userId) {
+        url += `?user_id=${userId}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'DELETE',
-        headers: getAuthHeaders(token),
+        headers: getRequestHeaders(),
+        credentials: 'include',
       });
 
       if (!response.ok) {
